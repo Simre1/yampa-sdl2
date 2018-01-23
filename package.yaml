@@ -1,0 +1,28 @@
+name:                YampaEngine
+version:             0.1.0.0
+#synopsis:
+#description:
+homepage:            https://github.com/Simre1/YampaEngine#readme
+license:             MIT
+author:              Simre
+maintainer:          simre4775@gmail.com
+copyright:           2018 Simre
+category:            Game
+extra-source-files:
+- README.md
+
+dependencies:
+  - base >= 4.7 && < 5
+  - Yampa
+  - sdl2
+ 
+library:
+  source-dirs:      src
+tests:
+  YampaEngine-test:
+    main: Main.hs
+    source-dirs: test
+    dependencies:
+      - base
+      - YampaEngine
+      - Yampa
