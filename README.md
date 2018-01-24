@@ -2,6 +2,9 @@
 
 YampaEngine aims to speed up game developement with the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa).
 
+Screenshot of the example below:
+![Screenshot](test/screenshot.png)
+
 Planned features:
 - Display 2D graphics
 - Play sound
