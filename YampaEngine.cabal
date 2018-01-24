@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e6b71b442f6f858aedc934e3c2e88a99fc669a43259d520531362e98823efda2
+-- hash: 3ef3f19f318e5f40fa38365d150e15588ca4695902264e14566ae4f04650b23d
 
 name:           YampaEngine
 version:        0.1.0.0
@@ -26,14 +26,18 @@ library
       YampaEngine.AppOutput
       YampaEngine.Backend
       YampaEngine.Backend.SDL
+      YampaEngine.Geometry
       YampaEngine.MainLoop
   other-modules:
       Paths_YampaEngine
   hs-source-dirs:
       src
   build-depends:
-      Yampa
+      SGplus
+    , StateVar
+    , Yampa
     , base >=4.7 && <5
+    , colour
     , sdl2
   default-language: Haskell2010
 
@@ -45,8 +49,11 @@ test-suite YampaEngine-test
   hs-source-dirs:
       test
   build-depends:
-      Yampa
+      SGplus
+    , StateVar
+    , Yampa
     , YampaEngine
     , base
+    , colour
     , sdl2
   default-language: Haskell2010

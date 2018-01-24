@@ -15,7 +15,10 @@ dependencies:
   - base >= 4.7 && < 5
   - Yampa
   - sdl2
- 
+  - SGplus
+  - colour
+  - StateVar
+
 library:
   source-dirs:      src
 tests:

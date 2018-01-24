@@ -8,4 +8,5 @@ data Backend a b = Backend
   , inputAction :: Bool -> IO (DTime, Maybe a)
   , outputAction :: Bool -> b -> IO Bool
   , parseInput :: SF a AppInput
+  , closeAction :: IO ()
   }

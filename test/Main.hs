@@ -1,12 +1,8 @@
 {-# Language Arrows #-}
 
 import FRP.Yampa
-
-import YampaEngine.MainLoop
+import YampaEngine
 import YampaEngine.Backend.SDL
-import YampaEngine.AppInput
-import YampaEngine.AppOutput
-
 
 main :: IO ()
 main = do
@@ -16,4 +12,15 @@ main = do
 
 sf :: SF AppInput AppOutput
 sf = proc input -> do
-  returnA -< AppOutput {shouldExit=False, i=5}
+  let camera = Camera $ Rectangle (Point2 (0,0)) (800,600)
+      obj1 =  Rectangle (Point2 (0,0)) (100,100)
+      obj2 = Rectangle (Point2 (50,50)) (100,100)
+  returnA -< AppOutput
+    { graphics = Graphics
+      { camera = camera
+      , objects = [R obj1 blue 0, R obj2 orange 1]
+      }
+    , sound = []
+    , shouldExit = False
+    }
+
