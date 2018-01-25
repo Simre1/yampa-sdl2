@@ -10,3 +10,15 @@ data Backend a b = Backend
   , parseInput :: SF a AppInput
   , closeAction :: IO ()
   }
+
+data BackendConfiguration = BackendConfiguration
+  { windowWidth :: Int
+  , windowHeight :: Int
+  , windowName :: String
+  }
+
+defaultBackendConfiguration = BackendConfiguration
+  { windowWidth = 800
+  , windowHeight = 600
+  , windowName = "App"
+  }

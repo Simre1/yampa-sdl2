@@ -18,6 +18,7 @@ dependencies:
   - SGplus
   - colour
   - StateVar
+  - text
 
 library:
   source-dirs:      src

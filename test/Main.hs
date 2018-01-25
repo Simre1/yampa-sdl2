@@ -3,19 +3,21 @@
 import FRP.Yampa
 import YampaEngine
 import YampaEngine.Backend.SDL
-
+  
 import Debug.Trace
 
 main :: IO ()
 main = do
-  backend <- sdlBackend
+  backend <- sdlBackend defaultBackendConfiguration
   mainLoop backend sf
 
 
 sf :: SF AppInput AppOutput
 sf = proc input -> do
   anyKeyE <- anyKeyActiveEvent -< input
-  point <- accumHoldBy (\p int -> p `plusDir` direction int) (Point2 (0,0)) -< anyKeyE
+  point <- accumHoldBy
+    (\p int -> p `plusDir` direction int)
+    (Point2 (0,0)) -< anyKeyE
   shouldQuit <- quitEvent -< input
   let camera = Camera $ Rectangle (Point2 (0,0)) (800,600)
       obj1 =  Rectangle (Point2 (0,0)) (100,100)

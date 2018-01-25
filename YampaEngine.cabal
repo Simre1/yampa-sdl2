@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 3ef3f19f318e5f40fa38365d150e15588ca4695902264e14566ae4f04650b23d
+-- hash: fba7cea2288d75142118576a7d29a6e49c1c908441a9e9fc1e06680998e7fc9a
 
 name:           YampaEngine
 version:        0.1.0.0
@@ -39,6 +39,7 @@ library
     , base >=4.7 && <5
     , colour
     , sdl2
+    , text
   default-language: Haskell2010
 
 test-suite YampaEngine-test
@@ -56,4 +57,5 @@ test-suite YampaEngine-test
     , base
     , colour
     , sdl2
+    , text
   default-language: Haskell2010
