@@ -43,17 +43,18 @@ main = do
 
 sf :: SF AppInput AppOutput
 sf = proc input -> do
+  anyKeyE <- anyKeyEvent -< input
+  i <- accumHoldBy (\x _ -> x + 1) 0 -< anyKeyE
+  shouldQuit <- quitEvent -< input
   let camera = Camera $ Rectangle (Point2 (0,0)) (800,600)
-      obj1 =  Rectangle (Point2 (0,0)) (100,100)
-      obj2 = Rectangle (Point2 (50,50)) (100,100)
+      obj1 =  Rectangle (Point2 (i*5,i*5)) (100,100)
+      obj2 = Rectangle (Point2 (50,50)) (100,100) 
   returnA -< AppOutput
     { graphics = Graphics
       { camera = camera
       , objects = [R obj1 blue 0, R obj2 orange 1]
       }
     , sound = []
-    , shouldExit = False
+    , shouldExit = isEvent shouldQuit
     }
 ```
-
-*Note:* This example app does not handle the quit event. That means you cannot close it :).

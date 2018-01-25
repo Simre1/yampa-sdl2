@@ -71,7 +71,7 @@ parseInput' = accumHoldBy onSDLInput initAppInput
 onSDLInput :: AppInput -> SDL.EventPayload -> AppInput
 onSDLInput ai SDL.QuitEvent = ai {inpQuit = True}
 onSDLInput ai (SDL.KeyboardEvent key) = ai {inpKey = Just ()}
-onSDLInput ai _ = ai
+onSDLInput ai _ = initAppInput
 
 renderView :: SDL.Renderer -> Camera -> RenderShape -> IO ()
 renderView renderer camera rs = do
