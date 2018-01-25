@@ -56,22 +56,46 @@ inputAction' lastInteraction _canBlock = do
 
 outputAction' :: SDL.Renderer -> Bool -> AppOutput -> IO Bool
 outputAction' renderer changed ao = do
-  when changed $ do
+
     let os = sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) $ objects (graphics ao)
         c = camera (graphics ao)
     SDL.rendererDrawColor renderer $= V4 maxBound maxBound maxBound maxBound
     SDL.clear renderer
     mapM_ (renderView renderer c) os
     SDL.present renderer
-  return (shouldExit ao)
+    return (shouldExit ao)
 
 parseInput' :: SF (Event SDL.EventPayload) AppInput
 parseInput' = accumHoldBy onSDLInput initAppInput
 
 onSDLInput :: AppInput -> SDL.EventPayload -> AppInput
 onSDLInput ai SDL.QuitEvent = ai {inpQuit = True}
-onSDLInput ai (SDL.KeyboardEvent key) = ai {inpKey = Just ()}
-onSDLInput ai _ = initAppInput
+onSDLInput ai (SDL.KeyboardEvent ev)
+    | SDL.keyboardEventKeyMotion ev == SDL.Pressed
+      = ai { inpKey = Just $ getKeyCode ev }
+    | SDL.keyboardEventKeyMotion ev == SDL.Released
+      = ai { inpKey = if inpKey ai == return (getKeyCode ev) then Nothing else inpKey ai }
+
+      
+  where getKeyCode = fromIntegral . SDL.unwrapScancode . SDL.keysymScancode . SDL.keyboardEventKeysym
+
+onSDLInput ai (SDL.MouseMotionEvent ev) =
+    ai { inpMousePos = (fromIntegral x, fromIntegral y) }
+    where P (V2 x y) = SDL.mouseMotionEventPos ev
+onSDLInput ai (SDL.MouseButtonEvent ev) = ai { inpMouseLeft  = lmb
+                                             , inpMouseRight = rmb }
+    where motion = SDL.mouseButtonEventMotion ev
+          button = SDL.mouseButtonEventButton ev
+          pos    = inpMousePos ai
+          inpMod = case (motion,button) of
+              (SDL.Released, SDL.ButtonLeft)  -> first (const Nothing)
+              (SDL.Pressed, SDL.ButtonLeft)   -> first (const (Just pos))
+              (SDL.Released, SDL.ButtonRight) -> second (const Nothing)
+              (SDL.Pressed, SDL.ButtonRight)  -> second (const (Just pos))
+              _                                      -> id
+          (lmb,rmb) = inpMod $ (inpMouseLeft &&& inpMouseRight) ai
+  
+onSDLInput ai _ = ai
 
 renderView :: SDL.Renderer -> Camera -> RenderShape -> IO ()
 renderView renderer camera rs = do
@@ -85,5 +109,5 @@ renderView renderer camera rs = do
       SDL.rendererDrawColor renderer $= V4 r g b maxBound
       SDL.fillRect renderer $
         Just $
-          SDL.Rectangle (round <$> P (V2 (x-w/2) (y-h/2)) ) (round <$> V2 w h )
+          SDL.Rectangle (round <$> P (V2 (x-w/2) (cameraH-(y+h/2))) ) (round <$> V2 w h )
 
