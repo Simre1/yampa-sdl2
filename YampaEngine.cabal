@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: fba7cea2288d75142118576a7d29a6e49c1c908441a9e9fc1e06680998e7fc9a
+-- hash: 9245cdde0daf2fde3d946522c40428aa83d3f102ef83152ca51b9f1e6d1a7662
 
 name:           YampaEngine
 version:        0.1.0.0
@@ -22,6 +22,7 @@ extra-source-files:
 library
   exposed-modules:
       YampaEngine
+      YampaEngine.Animation
       YampaEngine.AppInput
       YampaEngine.AppOutput
       YampaEngine.Backend

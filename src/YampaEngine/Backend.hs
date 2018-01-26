@@ -15,10 +15,12 @@ data BackendConfiguration = BackendConfiguration
   { windowWidth :: Int
   , windowHeight :: Int
   , windowName :: String
+  , windowResizable :: Bool
   }
 
 defaultBackendConfiguration = BackendConfiguration
   { windowWidth = 800
   , windowHeight = 600
   , windowName = "App"
+  , windowResizable = True
   }

@@ -44,6 +44,7 @@ sdlBackend bc = do
       SDL.defaultWindow
       { SDL.windowInitialSize =
           V2 (fromIntegral (windowWidth bc)) (fromIntegral (windowHeight bc))
+        , SDL.windowResizable = windowResizable (bc)
       }
 
 initAction' :: IO (Event SDL.EventPayload)
