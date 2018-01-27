@@ -2,5 +2,4 @@ flags: {}
 packages:
 - .
 extra-deps:
-- SGplus-1.1
 resolver: lts-9.20

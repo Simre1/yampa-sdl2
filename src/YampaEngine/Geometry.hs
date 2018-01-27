@@ -1,7 +1,10 @@
 module YampaEngine.Geometry
-  (module Data.SG, Shape, Point) where
+  (Shape(..)) where
 
-import Data.SG
+import Linear.V2
 
-type Shape = Shape' Double
-type Point = Point2' Double
+data Shape =
+  Rectangle
+  { shapeCentre :: V2 Double
+  , rectSize :: V2 Double
+  }

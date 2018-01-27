@@ -6,12 +6,12 @@ import Control.Concurrent
 import Control.Monad
 import Data.Colour.SRGB
 import Data.List (sortBy)
-import Data.SG
 import Data.StateVar (($=))
 import Data.Text (pack)
 import FRP.Yampa
 import qualified SDL
 import SDL.Vect
+import Lens.Micro
 
 import YampaEngine.AppInput (AppInput(..), initAppInput)
 import YampaEngine.AppOutput
@@ -70,7 +70,7 @@ outputAction' renderer changed ao = do
       renderer
       SDL.RGB24
       SDL.TextureAccessTarget
-      ((fmap round . uncurry V2 . rectSize . view) c)
+      ((fmap round . rectSize . view) c)
   SDL.rendererRenderTarget renderer $= return texture
   SDL.clear renderer
   mapM_ (renderView renderer c) os
@@ -123,22 +123,21 @@ onSDLInput ai _ = ai
 renderView :: SDL.Renderer -> Camera -> RenderShape -> IO ()
 renderView renderer camera rs = do
   let cameraPoint = shapeCentre (view camera)
-      (cameraW, cameraH) = rectSize (view camera)
+      cameraView = rectSize (view camera)
       shapePoint = shapeCentre (shape rs)
       adjustedShape =
         (shape rs)
         { shapeCentre =
-            shapePoint `plusDir` (iso ((* (-1)) <$> cameraPoint)) `plusDir`
-            (makeRel2 (cameraW / 2, cameraH / 2))
+            (shapePoint - cameraPoint) + cameraView/2
         }
   case adjustedShape of
-    Rectangle {shapeCentre = Point2 (x, y), rectSize = (w, h)} -> do
+    Rectangle {shapeCentre = V2 x y, rectSize = V2 w h} -> do
       let (RGB r g b) = toSRGB24 (colour rs)
       SDL.rendererDrawColor renderer $= V4 r g b maxBound
       SDL.fillRect
         renderer
         (Just $
          SDL.Rectangle
-           (round <$> P (V2 (x - w / 2) (cameraH - (y + h / 2))))
+           (round <$> P (V2 (x - w / 2) (cameraView ^._y - (y + h / 2))))
            (round <$> V2 w h))
   return ()

@@ -15,10 +15,11 @@ dependencies:
   - base >= 4.7 && < 5
   - Yampa
   - sdl2
-  - SGplus
   - colour
   - StateVar
   - text
+  - linear
+  - microlens
 
 library:
   source-dirs:      src
