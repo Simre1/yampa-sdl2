@@ -1,7 +1,12 @@
-module YampaEngine.Backend where
+module YampaSDL2.Backend
+  ( Backend(..)
+  , BackendConfiguration(..)
+  , defaultBackendConfiguration
+  ) where
 
 import FRP.Yampa
-import YampaEngine.AppInput
+
+import YampaSDL2.AppInput (AppInput)
 
 data Backend a b = Backend
   { initAction :: IO a

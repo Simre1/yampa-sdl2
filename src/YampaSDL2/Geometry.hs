@@ -1,4 +1,4 @@
-module YampaEngine.Geometry
+module YampaSDL2.Geometry
   (Shape(..)) where
 
 import Linear.V2

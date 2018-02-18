@@ -1,11 +1,11 @@
-module YampaEngine.MainLoop where
+module YampaSDL2.MainLoop
+  (mainLoop) where
 
 import FRP.Yampa
 
-
-import YampaEngine.AppInput
-import YampaEngine.AppOutput
-import YampaEngine.Backend
+import YampaSDL2.AppInput
+import YampaSDL2.AppOutput
+import YampaSDL2.Backend
 
 mainLoop :: Backend a AppOutput -> SF AppInput AppOutput -> IO ()
 mainLoop backend sf = do

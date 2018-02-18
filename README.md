@@ -1,56 +1,52 @@
-# YampaEngine
+# YampaSDL2
 
-YampaSDL2 exports some SDL2 bindings to use with the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa).
+YampaSDL2 provides SDL2 bindings to use with the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa).
 
-Screenshot of the example below:
-![Screenshot](screenshot.png)
+![Screenshot](./screenshot.png)
+A screenshot of some drawn shapes.
 
-Planned features:
-- Display 2D graphics
-- Play sound
+## Roadmap
 
-**This library is still in BETA**
+- [ ] Display Shapes
+  - [x] Rectangle
+  - [x] Circle
+  - [x] Triangle
+  - [ ] Polygon
+- [ ] Display Images
+- [x] Animations
+- [x] Handle Input
+- [ ] Play sound
 
-## How to Use
-
-Here is the example you see at the top. You can also find it in ./examples/SimpleRendering.hs.
-
-```haskell
-{-# Language Arrows #-}
-
-import FRP.Yampa
-import Linear.V2
-import YampaEngine
-import YampaEngine.Backend.SDL
+**This library is still work in progress**
 
 
-main :: IO ()
-main = do
-  backend <- sdlBackend defaultBackendConfiguration
-    { windowWidth = 600
-    , windowHeight = 600
-    }
-    
-  mainLoop backend sf
+## Getting started
 
+### Prerequisites
 
-sf :: SF AppInput AppOutput
-sf = proc i -> do
-  shouldQuit <- isEvent ^<< quitEvent -< i
-  returnA -< AppOutput
-    { graphics = Graphics
-      { camera = Camera $ (V2 0 (-15)) (V2 200 200)
-      , objects =
-        [rBottom, rMiddle, rTopLeft, rTopRight] 
-      }
-    , sound = []
-    , shouldExit = shouldQuit
-    }
+yampa-sdl2 uses the C-libraries
+- _sdl2_
+- _sdl2-gfx_
 
-  where
-    rColor = Filled orange
-    rBottom = RS (Rectangle (V2 0 (-82)) (V2 100 50)) rColor 0
-    rMiddle = RS (Rectangle (V2 0 0) (V2 70 115)) rColor 0
-    rTopLeft = RS (Rectangle (V2 (-33) 60) (V2 33 35)) rColor 0
-    rTopRight = RS (Rectangle (V2 33 60) (V2 33 35)) rColor 0
+Consequently, you need to have these two libraries installed on your computer.
+
+### Installation
+
+1. Download the library:
+```bash
+cd example-project
+git clone https://github.com/Simre1/yampa-sdl2.git
 ```
+2. Add it to your dependencies:
+Edit your stack.yaml file and add yampa-sdl2 to packages.
+Add the yampa-sdl2 dependency to your cabal file (or package.yaml)
+
+3. Import the library with: `import YampaSDL2`
+
+## How to use
+
+Head over to the [wiki](https://github.com/Simre1/yampa-sdl2/wiki).
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

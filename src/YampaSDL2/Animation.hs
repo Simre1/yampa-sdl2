@@ -1,11 +1,15 @@
 {-# Language Arrows #-}
 
-module YampaEngine.Animation where
+module YampaSDL2.Animation
+  ( animate
+  , Animation
+  , AnimationType(..)
+  , newAnimation
+  ) where
 
 import FRP.Yampa
 
-import YampaEngine.Geometry
-import YampaEngine.AppOutput
+import YampaSDL2.AppOutput (RenderShape)
 
 data Animation = Animation
   { frames :: [(Time, RenderShape)]

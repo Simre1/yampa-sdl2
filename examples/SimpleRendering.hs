@@ -1,10 +1,7 @@
 {-# Language Arrows #-}
 
 import FRP.Yampa
-import Linear.V2
-import YampaEngine
-import YampaEngine.Backend.SDL
-
+import YampaSDL2
 
 main :: IO ()
 main = do
@@ -18,10 +15,10 @@ main = do
 
 sf :: SF AppInput AppOutput
 sf = proc i -> do
-  shouldQuit <- isEvent ^<< quitEvent -< i
+  shouldQuit <- isEvent ^<< quit -< i
   returnA -< AppOutput
     { graphics = Graphics
-      { camera = Camera $ Rectangle (V2 0 (-15)) (V2 200 200)
+      { camera = Camera (V2 0 (-15)) (V2 200 200)
       , objects =
         [rBottom, rMiddle, rTopLeft, rTopRight] 
       }
@@ -30,8 +27,8 @@ sf = proc i -> do
     }
 
   where
-    rColor = orange
-    rBottom = R (Rectangle (V2 0 (-82)) (V2 100 50)) rColor 0
-    rMiddle = R (Rectangle (V2 0 0) (V2 70 115)) rColor 0
-    rTopLeft = R (Rectangle (V2 (-33) 60) (V2 33 35)) rColor 0
-    rTopRight = R (Rectangle (V2 33 60) (V2 33 35)) rColor 0
+    rColor = Filled orange
+    rBottom = RS (Rectangle (V2 0 (-82)) (V2 100 50)) rColor 0
+    rMiddle = RS (Rectangle (V2 0 0) (V2 70 115)) rColor 0
+    rTopLeft = RS (Rectangle (V2 (-33) 60) (V2 33 35)) rColor 0
+    rTopRight = RS (Rectangle (V2 33 60) (V2 33 35)) rColor 0

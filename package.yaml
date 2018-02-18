@@ -1,8 +1,8 @@
-name:                YampaSDL2
-version:             0.1.0.0
+name:                yampa-sdl2
+version:             0.0.1.0
 #synopsis:
 #description:
-homepage:            https://github.com/Simre1/YampaEngine#readme
+homepage:            https://github.com/Simre1/YampaSDL2#readme
 license:             MIT
 author:              Simre
 maintainer:          simre4775@gmail.com
@@ -24,11 +24,12 @@ dependencies:
 
 library:
   source-dirs:      src
+  exposed-modules: [YampaSDL2]
 tests:
   YampaSDL2-test:
     main: Main.hs
     source-dirs: test
     dependencies:
       - base
-      - YampaSDL2
+      - yampa-sdl2
       - Yampa
