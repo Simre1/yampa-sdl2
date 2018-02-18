@@ -9,6 +9,8 @@ Planned features:
 - Display 2D graphics
 - Play sound
 
+**This library is still in BETA**
+
 ## How to Use
 
 Here is the example you see at the top. You can also find it in ./examples/SimpleRendering.hs.
