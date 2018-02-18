@@ -1,0 +1,66 @@
+-- This file has been generated from package.yaml by hpack version 0.21.2.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: e50677f86721afedafadf30d606cbbf4253d53439cd3ad9123137649c5dc5b01
+
+name:           YampaSDL2
+version:        0.1.0.0
+category:       Graphics,Game
+homepage:       https://github.com/Simre1/YampaEngine#readme
+author:         Simre
+maintainer:     simre4775@gmail.com
+copyright:      2018 Simre
+license:        MIT
+license-file:   LICENSE
+build-type:     Simple
+cabal-version:  >= 1.10
+
+extra-source-files:
+    README.md
+
+library
+  exposed-modules:
+      YampaEngine
+      YampaEngine.Animation
+      YampaEngine.AppInput
+      YampaEngine.AppOutput
+      YampaEngine.Backend
+      YampaEngine.Backend.SDL
+      YampaEngine.Geometry
+      YampaEngine.MainLoop
+  other-modules:
+      Paths_YampaSDL2
+  hs-source-dirs:
+      src
+  build-depends:
+      StateVar
+    , Yampa
+    , base >=4.7 && <5
+    , colour
+    , linear
+    , microlens
+    , sdl2
+    , sdl2-gfx
+    , text
+  default-language: Haskell2010
+
+test-suite YampaSDL2-test
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_YampaSDL2
+  hs-source-dirs:
+      test
+  build-depends:
+      StateVar
+    , Yampa
+    , YampaSDL2
+    , base
+    , colour
+    , linear
+    , microlens
+    , sdl2
+    , sdl2-gfx
+    , text
+  default-language: Haskell2010

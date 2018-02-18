@@ -1,4 +1,4 @@
-name:                YampaEngine
+name:                YampaSDL2
 version:             0.1.0.0
 #synopsis:
 #description:
@@ -7,7 +7,7 @@ license:             MIT
 author:              Simre
 maintainer:          simre4775@gmail.com
 copyright:           2018 Simre
-category:            Game
+category:            Graphics,Game
 extra-source-files:
 - README.md
 
@@ -15,6 +15,7 @@ dependencies:
   - base >= 4.7 && < 5
   - Yampa
   - sdl2
+  - sdl2-gfx
   - colour
   - StateVar
   - text
@@ -24,10 +25,10 @@ dependencies:
 library:
   source-dirs:      src
 tests:
-  YampaEngine-test:
+  YampaSDL2-test:
     main: Main.hs
     source-dirs: test
     dependencies:
       - base
-      - YampaEngine
+      - YampaSDL2
       - Yampa

@@ -12,6 +12,7 @@ import FRP.Yampa
 import qualified SDL
 import SDL.Vect
 import Lens.Micro
+import qualified SDL.Primitive as GFX
 
 import YampaEngine.AppInput (AppInput(..), initAppInput)
 import YampaEngine.AppOutput
@@ -70,7 +71,7 @@ outputAction' renderer changed ao = do
       renderer
       SDL.RGB24
       SDL.TextureAccessTarget
-      ((fmap round . rectSize . view) c)
+      ((fmap round . cSize) c)
   SDL.rendererRenderTarget renderer $= return texture
   SDL.clear renderer
   mapM_ (renderView renderer c) os
@@ -122,22 +123,39 @@ onSDLInput ai _ = ai
 
 renderView :: SDL.Renderer -> Camera -> RenderShape -> IO ()
 renderView renderer camera rs = do
-  let cameraPoint = shapeCentre (view camera)
-      cameraView = rectSize (view camera)
-      shapePoint = shapeCentre (shape rs)
-      adjustedShape =
-        (shape rs)
-        { shapeCentre =
-            (shapePoint - cameraPoint) + cameraView/2
-        }
-  case adjustedShape of
-    Rectangle {shapeCentre = V2 x y, rectSize = V2 w h} -> do
-      let (RGB r g b) = toSRGB24 (colour rs)
-      SDL.rendererDrawColor renderer $= V4 r g b maxBound
-      SDL.fillRect
-        renderer
-        (Just $
-         SDL.Rectangle
-           (round <$> P (V2 (x - w / 2) (cameraView ^._y - (y + h / 2))))
-           (round <$> V2 w h))
+  let cameraPoint = (cPos camera)
+      cameraView = (cSize camera)
+
+  case rs of
+    Container {containerCentre=centre, children=rs } -> do
+      mapM_ (renderView renderer (Camera (cameraPoint + centre) cameraView)) rs
+    RS {shape=s, colour=c} -> do
+      let shapePoint = shapeCentre (shape rs)
+          adjustedShape =
+            s { shapeCentre =
+              (shapePoint - cameraPoint) + cameraView/2
+            }
+      case adjustedShape of
+        Rectangle {shapeCentre = V2 x y, rectSize = V2 w h} -> do
+          let (RGB r g b) = toSRGB24 (sColour rs)
+          let draw = if sFilled rs then GFX.fillRectangle else GFX.rectangle
+          draw renderer
+            (round <$> V2 (x - w / 2) (cameraView ^._y - (y + h / 2)))
+            (round <$> V2 (x + w / 2) (cameraView ^._y - (y - h / 2)))
+            (V4 r g b maxBound)
+        Circle {shapeCentre = V2 x y, radius=radius} -> do
+          let (RGB r g b) = toSRGB24 (sColour rs)
+          let draw = if sFilled rs then GFX.fillCircle else GFX.circle
+          draw renderer
+            (round <$> V2 x y)
+            (round radius)
+            (V4 r g b maxBound)
+        Triangle {shapeCentre=V2 x y, pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy} -> do
+          let (RGB r g b) = toSRGB24 (sColour rs)
+          let draw = if sFilled rs then GFX.fillTriangle else GFX.smoothTriangle
+          draw renderer
+            (round <$> V2 (x + pax) (cameraView ^._y - (y + pay)))
+            (round <$> V2 (x + pbx) (cameraView ^._y - (y + pby)))
+            (round <$> V2 (x + pcx) (cameraView ^._y - (y + pcy)))
+            (V4 r g b maxBound)
   return ()
