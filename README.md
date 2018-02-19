@@ -1,9 +1,14 @@
 # YampaSDL2
 
-YampaSDL2 provides SDL2 bindings to use with the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa).
+YampaSDL2 is basically a headstart for the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa) and SDL2. All the boilerplate which is normally necessary for these two libraries to work together is already taken care of. In the end, all that remains is a high-level interface specifically tailored to Yampa which should get you going in no time.
 
 ![Screenshot](./screenshot.png)
-A screenshot of some drawn shapes.
+
+Screenshot of some drawn shapes.
+
+**My primary Goals:**
+- As little setup as possible
+- Easy to use (some feedback would be appreciated)
 
 ## Roadmap
 
