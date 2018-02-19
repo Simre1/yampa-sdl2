@@ -16,6 +16,7 @@ import YampaSDL2.AppOutput ( AppOutput(..)
                            , ShapeColour (..)
                            )
 import YampaSDL2.Geometry
+import Control.Exception
 
 outputAction :: SDL.Renderer -> Bool -> AppOutput -> IO Bool
 outputAction renderer changed ao =
@@ -51,34 +52,45 @@ renderView renderer cam rs = do
     Container {containerCentre=centre, children=cs } -> do
       mapM_ (renderView renderer (Camera (cameraPoint - centre) cameraView)) (sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) cs)
     RS {shape=s} -> do
-      let shapePoint = shapeCentre (shape rs)
-          adjustedShape =
-            s { shapeCentre =
-              (shapePoint - cameraPoint) + cameraView/2
-            }
-      case adjustedShape of
-        Rectangle {shapeCentre = V2 x y, rectSize = V2 w h} -> do
+      let adjustCentre centre = (centre - cameraPoint) + cameraView/2
+      case s of
+        Rectangle {shapeCentre = point, rectSize = V2 w h} -> do
           let (RGB r g b) = toSRGB24 (sColour rs)
+              (V2 x y) = adjustCentre point
           let draw = if sFilled rs then GFX.fillRectangle else GFX.rectangle
           draw renderer
             (round <$> V2 (x - w / 2) (getY cameraView - (y + h / 2)))
             (round <$> V2 (x + w / 2) (getY cameraView - (y - h / 2)))
             (V4 r g b maxBound)
-        Circle {shapeCentre = V2 x y, radius=rad} -> do
+        Circle {shapeCentre = point, radius=rad} -> do
           let (RGB r g b) = toSRGB24 (sColour rs)
+              (V2 x y) = adjustCentre point
           let draw = if sFilled rs then GFX.fillCircle else GFX.circle
           draw renderer
             (round <$> V2 x y)
             (round rad)
             (V4 r g b maxBound)
-        Triangle {shapeCentre=V2 x y, pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy} -> do
+        Triangle {shapeCentre=point, pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy} -> do
           let (RGB r g b) = toSRGB24 (sColour rs)
-          let draw = if sFilled rs then GFX.fillTriangle else GFX.smoothTriangle
+              (V2 x y) = adjustCentre point
+              draw = if sFilled rs then GFX.fillTriangle else GFX.smoothTriangle
           draw renderer
             (round <$> V2 (x + pax) (getY cameraView - (y + pay)))
             (round <$> V2 (x + pbx) (getY cameraView - (y + pby)))
             (round <$> V2 (x + pcx) (getY cameraView - (y + pcy)))
             (V4 r g b maxBound)
+        Image {sourceRect=maybeS, destRect=maybeD, imgPath=path} -> do
+          eitherImgSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
+          case eitherImgSurface of
+            Left ex -> putStrLn $ "IMG Loading failed: " ++ show ex
+            Right val -> do
+              texture <- SDL.createTextureFromSurface renderer val
+              SDL.freeSurface val
+              let toSDLRect (V2 x y, V2 w h)= SDL.Rectangle (round <$> P (V2 (x-w/2) (getY cameraView - (y+h/2)))) (round <$> V2 w h)
+                  rectD = toSDLRect <$> (\(point,size) -> (adjustCentre point, size)) <$> maybeD
+                  rectS = toSDLRect <$> maybeS
+              SDL.copy renderer texture rectS rectD
+              SDL.destroyTexture texture
   return ()
 
 sColour :: RenderShape -> Colour Double

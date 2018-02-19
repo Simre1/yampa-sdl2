@@ -29,3 +29,8 @@ data Shape =
      , pointC :: V2 Double
      }
      -- ^ Think of shapeCentre as a vector which is applied to all 3 points of the triangle
+  | Image
+    { sourceRect :: Maybe (V2 Double, V2 Double)
+    , destRect :: Maybe (V2 Double, V2 Double)
+    ,  imgPath :: String
+    }

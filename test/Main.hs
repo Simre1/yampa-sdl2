@@ -22,7 +22,8 @@ sf = proc input -> do
   returnA -< AppOutput
     { graphics = Graphics
       { camera = camera
-      , objects = [Container (V2 200 200) [obj1 point, fromMaybe obj5 objAnimated]]
+      , objects = [background, obj1 point, fromMaybe obj5 
+objAnimated]
       }
     , sound = []
     , shouldExit = isEvent shouldQuit
@@ -41,4 +42,4 @@ sf = proc input -> do
         direction ScancodeDown = V2 0 (-1)
         direction ScancodeUp = V2 0 1
         direction _ = V2 0 0
-
+        background = RS (Image Nothing Nothing "/home/simon/Projects/yampa-sdl2/test/MARBLES.BMP") (Unfilled blue) (0)
