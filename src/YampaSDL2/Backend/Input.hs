@@ -4,16 +4,16 @@ module YampaSDL2.Backend.Input
 import qualified SDL
 import Control.Concurrent
 import FRP.Yampa
+import Debug.Trace
 
 inputAction :: MVar DTime -> Bool -> IO (DTime, Maybe (Event SDL.EventPayload))
 inputAction lastInteraction _canBlock = do
+  maybeEvent <- SDL.waitEventTimeout maximumWaitTime
   currentTime <- SDL.time
   dt <- (currentTime -) <$> swapMVar lastInteraction currentTime
-  let waitTime = if dt < delayTime then delayTime - dt else 0
-  --threadDelay $ round waitTime -- 10ms pause for roughly 100 FPS
-  mEvent <- SDL.pollEvent
-  return (dt, Event . SDL.eventPayload <$> mEvent)
 
-maxFPS = 100
+  return (dt, Event . SDL.eventPayload <$> maybeEvent)
 
-delayTime = 1000000/maxFPS
+maxFPS = 30
+
+maximumWaitTime = round $ 1000/fromIntegral maxFPS
