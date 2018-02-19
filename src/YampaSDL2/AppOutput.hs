@@ -1,30 +1,26 @@
+{-|
+Module      : Output
+Description : Datatypes to describe the output
+-}
+
 module YampaSDL2.AppOutput
-  ( AppOutput(..)
-  , Graphics (..)
-  , Sound(..)
-  , RenderShape(..)
-  , ShapeColour (..)
+  ( -- * Output
+    AppOutput(..)
+  , Graphics(..)
   , Camera(..)
-  )where
+  , RenderShape(..)
+  , ShapeColour(..)
+  , Sound(..)
+  ) where
 
 import Data.Colour
 import Linear.V2
 
 import YampaSDL2.Geometry (Shape)
 
-sColour :: RenderShape -> Colour Double
-sColour rs =
-  case colour rs of
-    (Filled a) -> a
-    (Unfilled a) -> a
-
-sFilled :: RenderShape -> Bool
-sFilled rs =
-  case colour rs of
-    (Filled _) -> True
-    otherwise -> False
 
 
+-- | Your main SF needs to create an AppOutput
 data AppOutput = AppOutput
   { graphics :: Graphics
   , sound :: [Sound]
@@ -36,21 +32,24 @@ data Graphics = Graphics
   , objects :: [RenderShape]
   }
 
-data Sound =
-  NotImplementedYet
+data Camera = Camera
+  { cPos :: V2 Double -- ^Moves the view point
+  , cSize :: V2 Double -- ^Set the size of the view, for example to zoom.
+  }
 
 data RenderShape
   = RS { shape :: Shape
        , colour :: ShapeColour
-       , zIndex :: Int }
-  | Container { containerCentre :: V2 Double
+       , zIndex :: Int -- ^ Higher zIndex means the RenderShape is in front of the others.
+       }
+
+  |  -- | Allows you to move multiple RenderShapes at once with the same vector
+    Container { containerCentre :: V2 Double
               , children :: [RenderShape] }
 
 data ShapeColour
   = Filled (Colour Double)
   | Unfilled (Colour Double)
 
-data Camera = Camera
-  { cPos :: V2 Double
-  , cSize :: V2 Double
-  }
+data Sound =
+  NotImplementedYet

@@ -1,5 +1,9 @@
+{-|
+Module      : Backend
+-}
 module YampaSDL2.Backend
-  ( Backend(..)
+  ( -- * Backend
+    Backend(..)
   , BackendConfiguration(..)
   , defaultBackendConfiguration
   ) where
@@ -7,6 +11,7 @@ module YampaSDL2.Backend
 import FRP.Yampa
 
 import YampaSDL2.AppInput (AppInput)
+
 
 data Backend a b = Backend
   { initAction :: IO a

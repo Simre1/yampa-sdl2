@@ -15,11 +15,10 @@ import qualified YampaSDL2.Backend.Output as Output
 import qualified YampaSDL2.Backend.Parse as Parse
 import qualified YampaSDL2.Backend.Close as Close
 
-import YampaSDL2.AppInput (AppInput(..), initAppInput, Scancode)
-import YampaSDL2.AppOutput
+import YampaSDL2.AppOutput (AppOutput)
 import YampaSDL2.Backend
-import YampaSDL2.Geometry
 
+-- | Set up SDL
 sdlBackend ::
      BackendConfiguration -> IO (Backend (Event SDL.EventPayload) AppOutput)
 sdlBackend bc = do
