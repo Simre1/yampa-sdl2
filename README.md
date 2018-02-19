@@ -37,16 +37,13 @@ Consequently, you need to have these two libraries installed on your computer.
 
 ### Installation
 
-1. Download the library:
-```bash
-cd example-project
-git clone https://github.com/Simre1/yampa-sdl2.git
-```
-2. Add it to your dependencies:
-Edit your stack.yaml file and add yampa-sdl2 to packages.
-Add the yampa-sdl2 dependency to your cabal file (or package.yaml)
+yampa-sdl2 is now on hackage! Adding yampa-sdl2 to your dependencies and executing the following should do the trick.
 
-3. Import the library with: `import YampaSDL2`
+```bash
+stack update
+stack solver --update-config
+stack build
+```
 
 ## How to use
 
