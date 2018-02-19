@@ -1,7 +1,17 @@
+{-|
+Module      : Geometry
+Description : Declares all shapes
+-}
+
 module YampaSDL2.Geometry
-  (Shape(..)) where
+  ( -- ** Shapes
+    Shape(..)
+  ) where
 
 import Linear.V2
+
+
+
 
 data Shape =
     Rectangle
@@ -18,3 +28,4 @@ data Shape =
      , pointB :: V2 Double
      , pointC :: V2 Double
      }
+     -- ^ Think of shapeCentre as a vector which is applied to all 3 points of the triangle

@@ -1,11 +1,11 @@
 module YampaSDL2
   ( module YampaSDL2.MainLoop
-  , module YampaSDL2.Geometry
+  , module YampaSDL2.Backend
+  , module YampaSDL2.Backend.SDL
   , module YampaSDL2.AppInput
   , module YampaSDL2.AppOutput
-  , module YampaSDL2.Backend
+  , module YampaSDL2.Geometry
   , module YampaSDL2.Animation
-  , module YampaSDL2.Backend.SDL
   , module Data.Colour.Names
   , module Data.Colour.SRGB
   , module Linear.V2

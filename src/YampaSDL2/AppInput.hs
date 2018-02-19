@@ -1,10 +1,15 @@
+{-|
+Module      : Input
+Description : Contains all input SF functions
+-}
+
 {-# Language Arrows #-}
 
 module YampaSDL2.AppInput
-
-  ( AppInput(..)
-  , module SDL.Input.Keyboard.Codes
+  ( -- * Input
+    AppInput(..)
   , initAppInput
+    -- ** SFs
   , quit
   , anyKeyActive
   , anyKeyPress
@@ -21,6 +26,7 @@ import Data.Maybe (isJust)
 import SDL.Input.Keyboard.Codes
 import Linear.V2
 
+-- | Your main SF receives AppInput as input
 data AppInput = AppInput
   { inpQuit :: Bool
   , inpKey :: Maybe Scancode
@@ -41,11 +47,9 @@ initAppInput = AppInput
 quit :: SF AppInput (Event ())
 quit = inpQuit ^>> edge
 
--- This will fire events as long as the key is pressed
 anyKeyActive :: SF AppInput (Event Scancode)
 anyKeyActive = inpKey ^>> arr maybeToEvent
 
--- This will fire events only once when a key is pressed. Pressing the key while another is already pressed will not work.
 anyKeyPress :: SF AppInput (Event Scancode)
 anyKeyPress = inpKey ^>> edgeJust
 

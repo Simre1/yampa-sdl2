@@ -2,11 +2,13 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: ad3ea10d2223d9cc0871b046fd6e016c1c9c6e80dc2212ed48e4b59085fd59a9
+-- hash: 03e817a47b063a73dd635929d74cec6d550986109c6361e048e24ba1ffe9b4be
 
 name:           yampa-sdl2
-version:        0.0.1.0
-category:       Graphics,Game
+version:        0.0.1.1
+synopsis:       Yampa and SDL2 made easy
+description:    yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
+category:       Graphics
 homepage:       https://github.com/Simre1/YampaSDL2#readme
 author:         Simre
 maintainer:     simre4775@gmail.com
@@ -44,7 +46,6 @@ library
     , base >=4.7 && <5
     , colour
     , linear
-    , microlens
     , sdl2
     , sdl2-gfx
     , text
@@ -63,7 +64,6 @@ test-suite YampaSDL2-test
     , base
     , colour
     , linear
-    , microlens
     , sdl2
     , sdl2-gfx
     , text

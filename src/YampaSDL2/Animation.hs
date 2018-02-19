@@ -1,8 +1,13 @@
+{-|
+Module      : Animation
+Description : Provide an easy way to do animations
+-}
 {-# Language Arrows #-}
 
 module YampaSDL2.Animation
-  ( animate
-  , Animation
+  ( -- * Animation
+    animate
+  , Animation(..)
   , AnimationType(..)
   , newAnimation
   ) where
@@ -12,13 +17,13 @@ import FRP.Yampa
 import YampaSDL2.AppOutput (RenderShape)
 
 data Animation = Animation
-  { frames :: [(Time, RenderShape)]
+  { frames :: [(Time, RenderShape)] -- ^ Time specifies how long the RenderShape is displayed, for example [(0.5, renderShape1), (0.5, renderShape2)]
   , type_ :: AnimationType
   }
 
-data AnimationType = Once | Endless | Repeat Int | Alternate | AlternateEndless
-
 newAnimation = Animation
+
+data AnimationType = Once | Endless | Repeat Int | Alternate | AlternateEndless
 
 animate :: Animation -> SF a (Maybe RenderShape)
 animate animation
