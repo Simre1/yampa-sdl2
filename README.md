@@ -1,9 +1,14 @@
 # YampaSDL2
 
-YampaSDL2 provides SDL2 bindings to use with the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa).
+YampaSDL2 is basically a headstart for the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa) and SDL2. All the boilerplate which is normally necessary for these two libraries to work together is already taken care of. In the end, all that remains is a high-level interface specifically tailored to Yampa which should get you going in no time.
 
 ![Screenshot](./screenshot.png)
-A screenshot of some drawn shapes.
+
+Screenshot of some drawn shapes.
+
+**My primary Goals:**
+- As little setup as possible
+- Easy to use (some feedback would be appreciated)
 
 ## Roadmap
 
@@ -32,16 +37,13 @@ Consequently, you need to have these two libraries installed on your computer.
 
 ### Installation
 
-1. Download the library:
-```bash
-cd example-project
-git clone https://github.com/Simre1/yampa-sdl2.git
-```
-2. Add it to your dependencies:
-Edit your stack.yaml file and add yampa-sdl2 to packages.
-Add the yampa-sdl2 dependency to your cabal file (or package.yaml)
+yampa-sdl2 is now on hackage! Adding yampa-sdl2 to your dependencies and executing the following should do the trick.
 
-3. Import the library with: `import YampaSDL2`
+```bash
+stack update
+stack solver --update-config
+stack build
+```
 
 ## How to use
 
