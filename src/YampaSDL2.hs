@@ -34,10 +34,13 @@ import YampaSDL2.AppOutput
   , Sound(..)
   , RenderShape(..)
   , Camera(..)
-  , ShapeColour(..)
+  , container
   )
 import YampaSDL2.Backend (defaultBackendConfiguration, BackendConfiguration(..))
-import YampaSDL2.Geometry (Shape(..))
+import YampaSDL2.Geometry
+  ( Shape(..)
+  , ShapeColour(..)
+  )
 import YampaSDL2.MainLoop (mainLoop)
 import YampaSDL2.Animation
   ( Animation

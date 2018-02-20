@@ -26,6 +26,7 @@ data BackendConfiguration = BackendConfiguration
   , windowHeight :: Int
   , windowName :: String
   , windowResizable :: Bool
+  , fps :: Double
   }
 
 defaultBackendConfiguration = BackendConfiguration
@@ -33,4 +34,5 @@ defaultBackendConfiguration = BackendConfiguration
   , windowHeight = 600
   , windowName = "App"
   , windowResizable = True
+  , fps = 60
   }

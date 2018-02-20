@@ -13,7 +13,7 @@ mainSF = proc _ -> do
   returnA -< AppOutput
                { graphics = Graphics
                  { camera = myCamera
-                 , objects = [blueCircle]
+                 , objects = [whiteBackground, blueCircle]
                  }
                , sound = []
                , shouldExit = False
@@ -27,7 +27,12 @@ myCamera = Camera
 
 blueCircle :: RenderShape
 blueCircle = RS
-  { shape = Circle (V2 0 0) 100
-  , colour = Filled blue
+  { shape = Circle (V2 0 0) 100 (Filled blue)
+  , zIndex = 1
+  }
+
+whiteBackground :: RenderShape
+whiteBackground = RS
+  { shape = Rectangle (V2 0 0) (V2 800 600) (Filled white)
   , zIndex = 0
   }
