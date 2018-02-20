@@ -12,6 +12,7 @@ import Data.Maybe
 import Control.Concurrent.MVar
 import Data.StateVar (($=), get)
 import Data.List
+import Debug.Trace
 
 import YampaSDL2.AppOutput ( AppOutput(..)
                            , Graphics (..)
@@ -77,9 +78,10 @@ adjustToCamera' c s =
 
 render' :: [(Bool, RenderShape)] -> [RenderShape]
 render' rs = fmap snd $
-  foldl createRenderlist [] $
-  -- highest zIndex first
-    sortBy (\(_,a) (_,b) -> compare (zIndex b) (zIndex a)) rs
+  filter fst $
+    foldl createRenderlist [] $
+    -- highest zIndex first
+      sortBy (\(_,a) (_,b) -> compare (zIndex b) (zIndex a)) rs
 
 createRenderlist :: [(Bool,RenderShape)] -> (Bool,RenderShape) -> [(Bool,RenderShape)]
 createRenderlist renderlist (changed,rs) =
@@ -91,12 +93,12 @@ createRenderlist renderlist (changed,rs) =
       v4RS = rsToV4 rs
       v4List = (\(_,a) -> rsToV4 a) <$> renderlist
       needRender =
-           all (\v4 -> not (v4 `isColliding` v4RS) && changed) v4List
-        || all (\v4 -> v4 `isColliding` v4RS && not (v4RS `isCoveredBy` v4)) v4List
+           (any (\v4 -> not (v4 `isColliding` v4RS) && changed) v4List)
+        || (any (\(c,rs) -> rsToV4 rs `isColliding` v4RS && not (v4RS `isCoveredBy` rsToV4 rs) && (changed || c)) renderlist)
+        || (null renderlist && changed)
   in if needRender
     then (True,rs):fmap (\(a,b) -> (a || v4RS `isColliding` rsToV4 b,b)) renderlist
     else (False,rs):renderlist
-
 
 -- TODO: More efficient algorhytm -> delete oldRS elements that are already found;
 checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderShape)]
@@ -136,7 +138,7 @@ renderShape mvarTextures renderer renderShape =
             (V4 r g b maxBound)
         Image {shapeCentre=centre', size=size', sourceRect=maybeRect, imgPath=path} -> do
           textures <- readMVar mvarTextures
-          case lookup path textures of
+          case lookup (traceShowId path) textures of
               (Just t) -> drawImage renderer t maybeRect centre' size'
               Nothing -> do
                 eitherSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
