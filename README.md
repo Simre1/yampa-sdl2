@@ -17,7 +17,7 @@ Screenshot of some drawn shapes.
   - [x] Circle
   - [x] Triangle
   - [ ] Polygon
-- [ ] Display Images
+- [x] Display Images
 - [x] Animations
 - [x] Handle Input
 - [ ] Play sound
