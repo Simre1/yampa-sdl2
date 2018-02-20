@@ -3,107 +3,84 @@ module YampaSDL2.Backend.Output
 
 import qualified SDL
 import qualified SDL.Primitive as GFX
-import SDL.Vect
 import Data.Colour.SRGB
-import Data.List (sortBy)
-import Data.StateVar (($=))
+import Data.List (find, sortBy)
 import Control.Monad
+import Control.Exception
+import Linear.V4
+import Linear.V2
+import Data.Maybe
+import Control.Concurrent.MVar
 
 import YampaSDL2.AppOutput ( AppOutput(..)
                            , Graphics (..)
                            , Camera (..)
                            , RenderShape (..)
-                           , ShapeColour (..)
                            )
 import YampaSDL2.Geometry
-import Control.Exception
 
-outputAction :: SDL.Renderer -> Bool -> AppOutput -> IO Bool
-outputAction renderer changed ao =
-  when changed ( do
-    let os =
-          sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) $ objects (graphics ao)
-        c = camera (graphics ao)
 
-    SDL.rendererDrawColor renderer $= V4 maxBound maxBound maxBound maxBound
-    texture <-
-      SDL.createTexture
-        renderer
-        SDL.RGB24
-        SDL.TextureAccessTarget
-        ((fmap round . cSize) c)
-    SDL.rendererRenderTarget renderer $= return texture
-    SDL.clear renderer
-    mapM_ (renderView renderer c) os
-    SDL.rendererRenderTarget renderer $= Nothing
-    SDL.clear renderer
-    SDL.copy renderer texture Nothing Nothing
-    SDL.present renderer
-    SDL.destroyTexture texture
-    )
-  >> return (shouldExit ao)
 
-renderView :: SDL.Renderer -> Camera -> RenderShape -> IO ()
-renderView renderer cam rs = do
-  let cameraPoint = (cPos cam)
-      cameraView = (cSize cam)
 
-  case rs of
-    Container {containerCentre=centre, children=cs } -> do
-      mapM_ (renderView renderer (Camera (cameraPoint - centre) cameraView)) (sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) cs)
-    RS {shape=s} -> do
-      let adjustCentre centre = (centre - cameraPoint) + cameraView/2
-      case s of
-        Rectangle {shapeCentre = point, rectSize = V2 w h} -> do
-          let (RGB r g b) = toSRGB24 (sColour rs)
-              (V2 x y) = adjustCentre point
-          let draw = if sFilled rs then GFX.fillRectangle else GFX.rectangle
-          draw renderer
-            (round <$> V2 (x - w / 2) (getY cameraView - (y + h / 2)))
-            (round <$> V2 (x + w / 2) (getY cameraView - (y - h / 2)))
-            (V4 r g b maxBound)
-        Circle {shapeCentre = point, radius=rad} -> do
-          let (RGB r g b) = toSRGB24 (sColour rs)
-              (V2 x y) = adjustCentre point
-          let draw = if sFilled rs then GFX.fillCircle else GFX.circle
-          draw renderer
-            (round <$> V2 x y)
-            (round rad)
-            (V4 r g b maxBound)
-        Triangle {shapeCentre=point, pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy} -> do
-          let (RGB r g b) = toSRGB24 (sColour rs)
-              (V2 x y) = adjustCentre point
-              draw = if sFilled rs then GFX.fillTriangle else GFX.smoothTriangle
-          draw renderer
-            (round <$> V2 (x + pax) (getY cameraView - (y + pay)))
-            (round <$> V2 (x + pbx) (getY cameraView - (y + pby)))
-            (round <$> V2 (x + pcx) (getY cameraView - (y + pcy)))
-            (V4 r g b maxBound)
-        Image {sourceRect=maybeS, destRect=maybeD, imgPath=path} -> do
-          eitherImgSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
-          case eitherImgSurface of
-            Left ex -> putStrLn $ "IMG Loading failed: " ++ show ex
-            Right val -> do
-              texture <- SDL.createTextureFromSurface renderer val
-              SDL.freeSurface val
-              let toSDLRect (V2 x y, V2 w h)= SDL.Rectangle (round <$> P (V2 (x-w/2) (getY cameraView - (y+h/2)))) (round <$> V2 w h)
-                  rectD = toSDLRect <$> (\(point,size) -> (adjustCentre point, size)) <$> maybeD
-                  rectS = toSDLRect <$> maybeS
-              SDL.copy renderer texture rectS rectD
-              SDL.destroyTexture texture
+outputAction :: MVar Graphics -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
+outputAction mvar renderer changed ao = when changed (renderObjects mvar renderer (graphics ao)) >> return (shouldExit ao)
+
+renderGraphics :: MVar Graphics -> SDL.Renderer -> Graphics -> IO ()
+renderGraphics mvar renderer ao = do
+  oldGraphics <- readMVar mvar
   return ()
 
-sColour :: RenderShape -> Colour Double
-sColour rs =
-  case colour rs of
-    (Filled a) -> a
-    (Unfilled a) -> a
+removeOutOfBounds :: Graphics -> Graphics
+removeOutOfBounds graphics =
+  let cam = camera graphics
+      objs = objects graphics
+      (V2 bR bT) = cPos cam + cSize cam
+      (V2 bL bB) = cPos cam - cSize cam
+      notOutOfBounds s = not $
+        let (V4 r l u d) = shapeToBorders s
+        in r < bL || l > bR || u < bB || d > bT
+  in graphics{objects=filter (notOutOfBounds . shape) objs} 
 
-sFilled :: RenderShape -> Bool
-sFilled rs =
-  case colour rs of
-    (Filled _) -> True
-    (Unfilled _) -> False
 
-getY :: V2 a -> a
-getY (V2 _ y) = y
+-- TODO: More efficient algorhytm -> delete oldRS elements that are already found
+checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderShape)]
+checkChanged oldRS newRS =
+  let oldSortedRS = sortBy (\rs1 rs2 -> key rs1 `compare` key rs2) oldRS
+      newSortedRS = sortBy (\rs1 rs2 -> key rs1 `compare` key rs2) newRS
+  in fmap (\rs -> (all ((==key rs).key) oldSortedRS, rs)) newSortedRS
+
+needsRerender :: [(Bool, RenderShape)] -> (Bool, RenderShape) -> Bool
+needsRerender rss (changed, rs) =
+  let lowerZIndex = (zIndex rs >).zIndex
+      colliding = isColliding (shape rs).shape
+      doesNotCover cover = not $
+        let (V4 rr rl rt rb) = shapeToBorders $ shape rs
+            (V4 cr cl ct cb) = shapeToBorders $ shape cover
+        in rr < cr && rl > cl && rt < ct && rb > cb
+      notTransparent' = not . isTransparent . shape
+      preFilteredRS = filter (\(_, r) -> colliding r) rss
+  in fmap (\(c, r) -> lowerZIndex r || doesNotCover r || notTransparent' r) preFilteredRS
+  where isSelf = ((key rs/=).key)
+
+
+-- TODO: Need to properly implement this; Color and Image can be transparent!
+isTransparent :: Shape -> Bool
+isTransparent = const False
+
+shapeToBorders :: Shape -> V4 Double
+shapeToBorders s =
+  case s of
+    Rectangle {shapeCentre=V2 x y, rectSize=V2 w h} ->
+      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+    Circle {shapeCentre=V2 x y, radius=r} ->
+      V4 (x+r) (x-r) (y+r) (y-r)
+    Triangle {shapeCentre=V2 x y, pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
+      V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
+    Image {shapeCentre=V2 x y, size=V2 w h} ->
+      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+
+isColliding :: Shape -> Shape -> Bool
+isColliding s1 s2 = not $
+  let (V4 r1 l1 t1 b1) = shapeToBorders s1
+      (V4 r2 l2 t2 b2) = shapeToBorders s2
+  in r1 < l2 || l1 > r2 || t1 < b2 || b1 > t2

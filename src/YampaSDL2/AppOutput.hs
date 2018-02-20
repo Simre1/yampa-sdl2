@@ -9,11 +9,9 @@ module YampaSDL2.AppOutput
   , Graphics(..)
   , Camera(..)
   , RenderShape(..)
-  , ShapeColour(..)
   , Sound(..)
   ) where
 
-import Data.Colour
 import Linear.V2
 
 import YampaSDL2.Geometry (Shape)
@@ -39,17 +37,13 @@ data Camera = Camera
 
 data RenderShape
   = RS { shape :: Shape
-       , colour :: ShapeColour
-       , zIndex :: Int -- ^ Higher zIndex means the RenderShape is in front of the others.
+       , zIndex :: Int -- ^ Higher zIndex means the RenderShape is in front of the others
+       , key :: Int
        }
 
   |  -- | Allows you to move multiple RenderShapes at once with the same vector
     Container { containerCentre :: V2 Double
               , children :: [RenderShape] }
-
-data ShapeColour
-  = Filled (Colour Double)
-  | Unfilled (Colour Double)
 
 data Sound =
   NotImplementedYet
