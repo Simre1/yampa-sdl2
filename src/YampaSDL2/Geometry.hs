@@ -18,19 +18,19 @@ data Shape =
     Rectangle
       { shapeCentre :: V2 Double
       , rectSize :: V2 Double
-      , colour :: Colour Double
+      , colour :: ShapeColour
       }
   | Circle
      { shapeCentre :: V2 Double
      , radius :: Double
-     , colour :: Colour Double
+     , colour :: ShapeColour
      }
   | Triangle
      { shapeCentre :: V2 Double
      , pointA :: V2 Double
      , pointB :: V2 Double
      , pointC :: V2 Double
-     , colour :: Colour Double
+     , colour :: ShapeColour
      }
      -- ^ Think of shapeCentre as a vector which is applied to all 3 points of the triangle
   | Image
@@ -38,11 +38,11 @@ data Shape =
     , size :: V2 Double
     , sourceRect :: Maybe (V2 Double, V2 Double)
     ,  imgPath :: String
-    }
+    } deriving (Eq, Show)
 
 data ShapeColour
   = Filled (Colour Double)
-  | Unfilled (Colour Double)
+  | Unfilled (Colour Double) deriving (Show,Eq)
 
 
 

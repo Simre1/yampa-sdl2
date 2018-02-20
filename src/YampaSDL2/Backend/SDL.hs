@@ -27,11 +27,14 @@ sdlBackend bc = do
   SDL.showWindow window
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
   lastInteraction <- newMVar =<< SDL.time
+  lastGraphics <- newMVar Nothing
+  lastRender <- newMVar 0
+  imageTextures <- newMVar []
   return $
     Backend
     { initAction = Init.initAction
     , inputAction = Input.inputAction lastInteraction
-    , outputAction = Output.outputAction renderer
+    , outputAction = Output.outputAction (fps bc) imageTextures lastRender lastGraphics window renderer
     , parseInput = Parse.parseInput
     , closeAction = Close.closeAction renderer window
     }
@@ -41,5 +44,5 @@ sdlBackend bc = do
       { SDL.windowInitialSize =
           V2 (fromIntegral (windowWidth bc)) (fromIntegral (windowHeight bc))
         , SDL.windowResizable = windowResizable (bc)
-      }
+      } 
 

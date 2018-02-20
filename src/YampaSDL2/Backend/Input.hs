@@ -12,8 +12,8 @@ inputAction lastInteraction _canBlock = do
   currentTime <- SDL.time
   dt <- (currentTime -) <$> swapMVar lastInteraction currentTime
 
-  return (dt, Event . SDL.eventPayload <$> maybeEvent)
+  return (dt, Event . traceShowId . SDL.eventPayload <$> maybeEvent)
 
-maxFPS = 30
+minIPS = 30
 
-maximumWaitTime = round $ 1000/fromIntegral maxFPS
+maximumWaitTime = round $ 1000/fromIntegral minIPS
