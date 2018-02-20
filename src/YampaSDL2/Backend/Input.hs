@@ -4,7 +4,6 @@ module YampaSDL2.Backend.Input
 import qualified SDL
 import Control.Concurrent
 import FRP.Yampa
-import Debug.Trace
 
 inputAction :: MVar DTime -> Bool -> IO (DTime, Maybe (Event SDL.EventPayload))
 inputAction lastInteraction _canBlock = do
@@ -12,7 +11,7 @@ inputAction lastInteraction _canBlock = do
   currentTime <- SDL.time
   dt <- (currentTime -) <$> swapMVar lastInteraction currentTime
 
-  return (dt, Event . traceShowId . SDL.eventPayload <$> maybeEvent)
+  return (dt, Event . SDL.eventPayload <$> maybeEvent)
 
 minIPS = 30
 

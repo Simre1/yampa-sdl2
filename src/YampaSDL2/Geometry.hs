@@ -12,8 +12,6 @@ module YampaSDL2.Geometry
 import Linear.V2
 import Data.Colour
 
-
-
 data Shape =
     Rectangle
       { shapeCentre :: V2 Double
@@ -36,8 +34,8 @@ data Shape =
   | Image
     { shapeCentre :: V2 Double
     , size :: V2 Double
-    , sourceRect :: Maybe (V2 Double, V2 Double)
-    ,  imgPath :: String
+    , sourceRect :: Maybe (V2 Double, V2 Double) -- ^ the section of the image that you want to render
+    , imgPath :: String
     } deriving (Eq, Show)
 
 data ShapeColour

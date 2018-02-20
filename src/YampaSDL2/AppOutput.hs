@@ -32,15 +32,9 @@ data Graphics = Graphics
   } deriving Show
 
 data Camera = Camera
-  { cPos :: V2 Double -- ^Moves the view point
-  , cSize :: V2 Double -- ^Set the size of the view, for example to zoom.
+  { cPos :: V2 Double -- ^Moves the viewpoint
+  , cSize :: V2 Double -- ^Set the size of the viewpoint, for example to zoom.
   } deriving Show
-
- -- | Allows you to move multiple RenderShapes at once with the same vector
--- data Container =
---       Container { containerCentre :: V2 Double
---               , children :: [RenderShape] }
---     | CRS {renderShape :: RenderShape}
 
 container :: V2 Double -> [RenderShape] -> [RenderShape]
 container translateV2 children =

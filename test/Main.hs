@@ -42,4 +42,4 @@ objAnimated]]
         direction ScancodeDown = V2 0 (-2)
         direction ScancodeUp = V2 0 2
         direction _ = V2 0 0
-        background = RS (Image (V2 0 0) (V2 800 600) Nothing "/home/simon/Projects/yampa-sdl2/test/MARBLES.BMP") 0
+        background = RS (Image (V2 0 0) (V2 800 600) Nothing "./test/MARBLES.BMP") 0
