@@ -12,7 +12,6 @@ import Data.Maybe
 import Control.Concurrent.MVar
 import Data.StateVar (($=), get)
 import Data.List
-import Debug.Trace
 
 import YampaSDL2.AppOutput ( AppOutput(..)
                            , Graphics (..)
@@ -138,7 +137,7 @@ renderShape mvarTextures renderer renderShape =
             (V4 r g b maxBound)
         Image {shapeCentre=centre', size=size', sourceRect=maybeRect, imgPath=path} -> do
           textures <- readMVar mvarTextures
-          case lookup (traceShowId path) textures of
+          case lookup path textures of
               (Just t) -> drawImage renderer t maybeRect centre' size'
               Nothing -> do
                 eitherSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
