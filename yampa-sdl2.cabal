@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: c570b1b1938d51918603a068252687f218bfc16e0da4f1c3e581ded264fb4bd8
+-- hash: 203748afacf093870fc8ad24c7c65112e236813818cd6769b5e16c1207de361c
 
 name:           yampa-sdl2
 version:        0.0.2.0
@@ -46,7 +46,7 @@ library
     , base >=4.7 && <5
     , colour
     , linear
-    , sdl2
+    , sdl2 >=2.2.0
     , sdl2-gfx
     , text
   default-language: Haskell2010
@@ -64,7 +64,7 @@ test-suite YampaSDL2-test
     , base
     , colour
     , linear
-    , sdl2
+    , sdl2 >=2.2.0
     , sdl2-gfx
     , text
     , yampa-sdl2

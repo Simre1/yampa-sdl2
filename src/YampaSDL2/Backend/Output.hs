@@ -102,7 +102,7 @@ createRenderlist renderlist (changed,rs) =
 -- TODO: More efficient algorhytm -> delete oldRS elements that are already found;
 checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderShape)]
 checkChanged oldRS newRS =
- fmap (\rs -> (all (/=rs) oldRS, rs)) newRS
+    fmap (\rs -> ((any (/=rs) oldRS || null oldRS), rs)) newRS
  
 
 -- TODO: Need to properly implement this; Color and Image can be transparent!
