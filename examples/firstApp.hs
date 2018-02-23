@@ -27,12 +27,14 @@ myCamera = Camera
 
 blueCircle :: RenderShape
 blueCircle = RS
-  { shape = Circle (V2 0 0) 100 (Filled blue)
+  { shapeCentre = V2 0 0
+  , shape = Circle 100 (Filled blue)
   , zIndex = 1
   }
 
 whiteBackground :: RenderShape
 whiteBackground = RS
-  { shape = Rectangle (V2 0 0) (V2 800 600) (Filled white)
+  { shapeCentre = V2 0 0
+  , shape = Rectangle (V2 800 600) (Filled white)
   , zIndex = 0
   }

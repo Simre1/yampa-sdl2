@@ -12,6 +12,8 @@ import Data.Maybe
 import Control.Concurrent.MVar
 import Data.StateVar (($=), get)
 import Data.List
+import Data.Colour.Names
+
 
 import YampaSDL2.AppOutput ( AppOutput(..)
                            , Graphics (..)
@@ -20,8 +22,10 @@ import YampaSDL2.AppOutput ( AppOutput(..)
                            )
 import YampaSDL2.Geometry
 
+
 -- changed bool variable does not do anything
-outputAction :: Double -> MVar [(String, SDL.Texture)]-> MVar Double -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
+outputAction :: Double -> MVar [(String, (SDL.Texture, V2 Int))]-> MVar Double -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
+
 outputAction fps mvarTextures mvarFPS mvarG window renderer _ ao = do
   lastTime <- readMVar mvarFPS
   currentTime <- SDL.time
@@ -31,18 +35,97 @@ outputAction fps mvarTextures mvarFPS mvarG window renderer _ ao = do
 
   when ensureFPS (renderGraphics mvarTextures mvarG window renderer (graphics ao)) >> return (shouldExit ao)
 
-renderGraphics :: MVar [(String, SDL.Texture)] -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
+renderGraphics :: MVar [(String, (SDL.Texture, V2 Int))] -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
 renderGraphics mvarTextures mvarG window renderer gra = do
+  textures <- readMVar mvarTextures
   let newGraphics =
-        removeOutOfBounds $
-          adjustToCamera gra
+        splitObjects textures 100 $
+         adjustToCamera $
+          removeOutOfBounds gra
   oldObjects <- fromMaybe [] <$> fmap objects <$> swapMVar mvarG (return newGraphics)
   (V2 wW wH) <- fmap (fromIntegral . fromEnum) <$> get (SDL.windowSize window)
   (V2 cW cH) <- return (cSize $ camera gra)
   SDL.rendererScale renderer $= realToFrac <$> (V2 (wW/cW) (wH/cH))
-  render mvarTextures renderer (oldObjects) newGraphics
+  render mvarTextures renderer oldObjects newGraphics
 
-render :: MVar [(String, SDL.Texture)] -> SDL.Renderer -> [RenderShape] -> Graphics -> IO ()
+-- Preprocessing rendershapes for rendering
+
+removeOutOfBounds :: Graphics -> Graphics
+removeOutOfBounds graphics =
+  let cam = camera graphics
+      objs = objects graphics
+      (V2 bR bT) =  cPos cam + cSize cam/2
+      (V2 bL bB) = cPos cam - cSize cam/2
+      notOutOfBounds s = not $
+        let (V4 r l u d) = shapeToBorders s
+        in r < bL || l > bR || u < bB || d > bT
+  in graphics{objects=filter (notOutOfBounds) objs}
+
+
+adjustToCamera :: Graphics -> Graphics
+adjustToCamera gra =
+  let cam = camera gra
+      obs = objects gra
+  in gra{objects = (\rs -> adjustToCamera' cam rs) <$> obs}
+
+
+adjustToCamera' :: Camera -> RenderShape -> RenderShape
+adjustToCamera' c rs =
+  let (V2 cx cy) = cPos c
+      (V2 w h) = cSize c
+      s = shape rs
+      adjustPoint (V2 x y) = V2 (x+w/2-cx) (h/2-(y+cy))
+      inverseY (V2 x y) = V2 x (-y)
+      adjustedCentre = adjustPoint (shapeCentre rs)
+      adjustedShape = case s of
+       Triangle{ pointA=pA, pointB=pB, pointC=pC} ->
+         s{pointA=inverseY pA, pointB = inverseY pB, pointC=inverseY pC}
+       otherwise -> s
+  in rs{shapeCentre=adjustedCentre, shape=adjustedShape}
+
+-- Split objects at every x/givenSize==0 to minimize necessary rendering for big shapes if just a part of them changed.
+
+splitObjects :: [(String, (SDL.Texture, V2 Int))] -> Double -> Graphics -> Graphics
+splitObjects textures givenSize gra =
+  gra{objects=concatMap (splitObjects' textures givenSize) (objects gra)}
+
+splitObjects' :: [(String, (SDL.Texture, V2 Int))] -> Double -> RenderShape -> [RenderShape]
+splitObjects' textures xSize rs =
+ let (V2 x y) = shapeCentre rs
+ in case shape rs of
+    Rectangle{rectSize=V2 w h, colour=c} ->
+      let (firstPoint, sizes) = calculateSize xSize x w
+      in snd $ mapAccumL
+        (\curPos (s,nextS) -> (curPos+s/2+nextS/2,RS (V2 curPos y) (Rectangle (V2 s h) c) (zIndex rs)))
+        firstPoint
+        sizes
+    Image{size=V2 w h,imgPath=path,sourceRect=maybeRect} ->
+      let sourceR = (flip fromMaybe) maybeRect <$> (\(_,s) -> ((fromIntegral <$> s)/2, fromIntegral <$> s)) <$> lookup path textures
+      in case sourceR of
+        Just (V2 sX sY,V2 sW sH) ->
+          let (firstPoint, sizes) = calculateSize xSize x w
+          in snd $ mapAccumL
+             (\curPos (s,nextS) -> (curPos+s/2+nextS/2,RS (V2 curPos y) (Image (V2 s h) (return (V2 (curPos*sW/w) sY, V2 ((sW/w)*s) sH)) path) (zIndex rs)))
+             firstPoint
+             sizes
+
+        Nothing -> [rs]
+    otherwise -> [rs]
+  where calculateSize :: Double -> Double -> Double -> (Double, [(Double,Double)])
+        calculateSize preferredSize screenPos actualWidth =
+          let leftSide = screenPos - (actualWidth / 2)
+              firstSize = preferredSize - fromIntegral (round leftSide `rem` round preferredSize)
+          in if firstSize < actualWidth
+                then let lastSize = fromIntegral $ round (actualWidth - firstSize) `rem` round preferredSize
+                         howManyNormal = round $ (actualWidth - (lastSize + firstSize)) / preferredSize
+                         firstPoint = leftSide + (firstSize / 2)
+
+                         sizes = firstSize:replicate howManyNormal preferredSize++if lastSize /= 0 then [lastSize] else []
+                     in (firstPoint, sizes `zip` (tail sizes ++ [0]))
+                else (leftSide+actualWidth / 2,[(actualWidth,0)])
+
+-- Rendering of preprocessed shapes
+render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> [RenderShape] -> Graphics -> IO ()
 render mvarTextures renderer oldRS gra = do
   let oldSortedRS = sortBy (\rs1 rs2 -> zIndex rs1 `compare` zIndex rs2) oldRS
       newSortedRS = sortBy (\rs1 rs2 -> zIndex rs1 `compare` zIndex rs2) (objects gra)
@@ -52,93 +135,103 @@ render mvarTextures renderer oldRS gra = do
       sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) rerenderList
   SDL.present renderer
 
-adjustToCamera :: Graphics -> Graphics
-adjustToCamera gra =
-  let cam = camera gra
-      obs = objects gra
-  in gra{objects = (\rs -> rs {shape=adjustToCamera' cam (shape rs)}) <$> obs}
+-- wrapper for RenderShape to add shapes which are not drawn to decide if a rerender is necessary
+data RenderAction = RealAction RenderShape | ShadowAction RenderShape deriving (Show, Eq)
 
+getShape :: RenderAction -> RenderShape
+getShape (RealAction s) = s
+getShape (ShadowAction s) = s
 
-adjustToCamera' :: Camera -> Shape -> Shape
-adjustToCamera' c s =
-  let (V2 cx cy) = cPos c
-      (V2 w h) = cSize c
-      adjustPoint (V2 x y) = V2 (x+w/2-cx) (h/2-(y+cy))
-      inverseY (V2 x y) = V2 x (-y)
-  in case s of
-       Rectangle{shapeCentre=centre} ->
-         s{shapeCentre=adjustPoint centre}
-       Circle{shapeCentre=centre} ->
-         s{shapeCentre=adjustPoint centre}
-       Triangle{shapeCentre=centre, pointA=pA, pointB=pB, pointC=pC} ->
-         s{shapeCentre=adjustPoint centre, pointA=inverseY pA, pointB = inverseY pB, pointC=inverseY pC}
-       Image{shapeCentre=centre} ->
-         s{shapeCentre=adjustPoint centre}
-
-render' :: [(Bool, RenderShape)] -> [RenderShape]
-render' rs = fmap snd $
-  filter fst $
-    foldl createRenderlist [] $
-    -- highest zIndex first
-      sortBy (\(_,a) (_,b) -> compare (zIndex b) (zIndex a)) rs
-
-createRenderlist :: [(Bool,RenderShape)] -> (Bool,RenderShape) -> [(Bool,RenderShape)]
-createRenderlist renderlist (changed,rs) =
-  let isCoveredBy a b =
-        let (V4 rr rl rt rb) = a
-            (V4 cr cl ct cb) = b
-        in rr < cr && rl > cl && rt < ct && rb > cb
-      rsToV4 = shapeToBorders . shape
-      v4RS = rsToV4 rs
-      v4List = (\(_,a) -> rsToV4 a) <$> renderlist
-      needRender =
-           (any (\v4 -> not (v4 `isColliding` v4RS) && changed) v4List)
-        || (any (\(c,rs) -> rsToV4 rs `isColliding` v4RS && not (v4RS `isCoveredBy` rsToV4 rs) && (changed || c)) renderlist)
-        || (null renderlist && changed)
-  in if needRender
-    then (True,rs):fmap (\(a,b) -> (a || v4RS `isColliding` rsToV4 b,b)) renderlist
-    else (False,rs):renderlist
+isReal :: RenderAction -> Bool
+isReal (RealAction _) = True
+isReal _ = False
 
 -- TODO: More efficient algorhytm -> delete oldRS elements that are already found;
-checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderShape)]
+checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderAction)]
 checkChanged oldRS newRS =
-    fmap (\rs -> ((any (/=rs) oldRS || null oldRS), rs)) newRS
- 
+  let changedOldRS = filter (\rs -> rs `notElem` newRS) oldRS
+  in fmap (\rs -> ((not (any (==rs) oldRS) || null oldRS), RealAction rs)) newRS ++ fmap (\rs -> (True, ShadowAction rs)) changedOldRS
+
+-- decide which rendershapes need rendering
+render' :: [(Bool, RenderAction)] -> [RenderShape]
+render' rs = fmap getShape . filter isReal $
+  let unchanged = snd <$> filter (not . fst) rs
+      changed = snd <$> filter fst rs
+  in areUnchangedSame [] unchanged changed
+
+areUnchangedSame :: [RenderAction] -> [RenderAction] -> [RenderAction] -> [RenderAction]
+areUnchangedSame compare unchanged changed
+  | compare == unchanged = changed
+  | otherwise = uncurry (areUnchangedSame unchanged) (checkRenders unchanged $ changed)
+
+
+checkRenders :: [RenderAction] -> [RenderAction] -> ([RenderAction],[RenderAction])
+checkRenders unchanged changed =
+  if null unchanged
+    then ([],changed)
+    else let tests = fmap (\uc -> ((any (checkIfRenderIsNecessary uc) changed),uc)) unchanged
+         in (snd <$> filter (not.fst) tests, changed++(snd <$> filter (fst) tests))
+  where checkIfRenderIsNecessary unchangedObject changedObject =
+             unchangedObject `isColliding` changedObject
+
+
+hasHigherZIndex :: RenderAction -> RenderAction -> Bool
+hasHigherZIndex rs1 rs2 = zIndex (getShape rs1) > zIndex (getShape rs2)
+
+isCoveredBy :: RenderAction -> RenderAction -> Bool
+isCoveredBy a b =
+  let (V4 rr rl rt rb) = shapeToBorders (getShape a)
+      (V4 cr cl ct cb) = shapeToBorders (getShape b)
+  in rr <= cr && rl >= cl && rt <= ct && rb >= cb
+
+-- FIXME: Not sure if this is right
+isColliding :: RenderAction -> RenderAction -> Bool
+isColliding s1 s2 =
+  let (V4 r1 l1 t1 b1) = shapeToBorders (getShape s1)
+      (V4 r2 l2 t2 b2) = shapeToBorders (getShape s2)
+  in (((r2 > l1 && r2 < r1) || (l2 > l1 && l2 < r1)) && ((t2 > b1 && t2 < t1) || (b2 > b1 && b2 < t1)))
+  || (((r1 > l2 && r1 < r2) || (l1 > l2 && l1 < r2)) && ((t1 > b2 && t1 < t2) || (b1 > b2 && b1 < t2)))
 
 -- TODO: Need to properly implement this; Color and Image can be transparent!
-isTransparent :: Shape -> Bool
+isTransparent :: RenderAction -> Bool
 isTransparent = const False
 
-renderShape :: MVar [(String, SDL.Texture)] -> SDL.Renderer -> RenderShape -> IO ()
+
+-- actual renderfunction
+renderShape :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> RenderShape -> IO ()
 renderShape mvarTextures renderer renderShape =
-      let shape' = shape renderShape in
-      case shape' of
-        Rectangle {shapeCentre = centre', rectSize = rectSize'} -> do
+      let shape' = shape renderShape
+          centre' = shapeCentre renderShape
+      in case shape' of
+        Rectangle {rectSize = rectSize'} -> do
           let (RGB r g b) = toSRGB24 (sColour shape')
           let draw = if sFilled shape' then GFX.fillRectangle else GFX.rectangle
           draw renderer
             (round <$> centre'-rectSize'/2)
             (round <$> centre'+rectSize'/2)
             (V4 r g b maxBound)
-        Circle {shapeCentre = centre', radius=rad'} -> do
+        Circle {radius=rad'} -> do
           let (RGB r g b) = toSRGB24 (sColour shape')
           let draw = if sFilled shape' then GFX.fillCircle else GFX.circle
           draw renderer
             (round <$> centre')
             (round rad')
             (V4 r g b maxBound)
-        Triangle {shapeCentre=V2 x y, pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy, colour=c'} -> do
+        Triangle {pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy, colour=c'} -> do
           let (RGB r g b) = toSRGB24 (sColour shape')
+              (V2 x y) = centre'
               draw = if sFilled shape' then GFX.fillTriangle else GFX.smoothTriangle
           draw renderer
             (round <$> V2 (x + pax) (y + pay))
             (round <$> V2 (x + pbx) (y + pby))
             (round <$> V2 (x + pcx) (y + pcy))
             (V4 r g b maxBound)
-        Image {shapeCentre=centre', size=size', sourceRect=maybeRect, imgPath=path} -> do
+        Image {size=size', sourceRect=maybeRect, imgPath=path} -> do
           textures <- readMVar mvarTextures
           case lookup path textures of
-              (Just t) -> drawImage renderer t maybeRect centre' size'
+              (Just (t,size)) ->
+                let newSize = fromMaybe ((fromIntegral<$>size)/2, fromIntegral <$> size) maybeRect
+                in drawImage renderer t (return newSize) centre' size'
               Nothing -> do
                 eitherSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
                 case eitherSurface of
@@ -146,45 +239,32 @@ renderShape mvarTextures renderer renderShape =
                   Right val -> do
 
                     newTexture <- SDL.createTextureFromSurface renderer val
-                    modifyMVar_ mvarTextures $ return . ((path,newTexture):)
+                    attrs <- SDL.queryTexture newTexture
+                    let w = SDL.textureWidth attrs
+                        h = SDL.textureHeight attrs
+                    modifyMVar_ mvarTextures $ return . ((path,(newTexture, fromEnum <$> V2 w h)):)
                     drawImage renderer newTexture maybeRect centre' size'
-
-
-          return ()
   where drawImage renderer texture source position size = do
           let toSDLRect (V2 x y, V2 w h) =
                 SDL.Rectangle (round <$> SDL.P (V2 (x-w/2) (y-h/2))) (round <$> V2 w h)
           SDL.copy renderer texture (toSDLRect <$> source) (return $ toSDLRect (position,size))
 
-shapeToBorders :: Shape -> V4 Int
-shapeToBorders s =
-  case s of
-    Rectangle {shapeCentre=V2 x y, rectSize=V2 w h} ->
-      round <$> V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
-    Circle {shapeCentre=V2 x y, radius=r} ->
-      round <$> V4 (x+r) (x-r) (y+r) (y-r)
-    Triangle {shapeCentre=V2 x y, pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
-      round <$> V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
-    Image {shapeCentre=V2 x y, size=V2 w h} ->
-      round <$> V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
-      
-removeOutOfBounds :: Graphics -> Graphics
-removeOutOfBounds graphics =
-  let cam = camera graphics
-      objs = objects graphics
-      (V2 bR bT) = round <$> cPos cam + cSize cam
-      (V2 bL bB) = round <$> cPos cam - cSize cam
-      notOutOfBounds s = not $
-        let (V4 r l u d) = shapeToBorders s
-        in r < bL || l > bR || u < bB || d > bT
-  in graphics{objects=filter (notOutOfBounds . shape) objs}
 
+-- helper functions
+shapeToBorders :: RenderShape -> V4 Double
+shapeToBorders rs =
+  let s = shape rs
+      (V2 x y) = shapeCentre rs
+  in case s of
+    Rectangle {rectSize=V2 w h} ->
+      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+    Circle {radius=r} ->
+      V4 (x+r) (x-r) (y+r) (y-r)
+    Triangle {pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
+      V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
+    Image {size=V2 w h} ->
+      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
 
-isColliding :: V4 Int -> V4 Int -> Bool
-isColliding s1 s2 = not $
-  let (V4 r1 l1 t1 b1) = s1
-      (V4 r2 l2 t2 b2) = s2
-  in r1 < l2 || l1 > r2 || t1 < b2 || b1 > t2
 
 sColour :: Shape -> Colour Double
 sColour s =

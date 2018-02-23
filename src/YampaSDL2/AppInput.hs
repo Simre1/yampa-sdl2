@@ -33,7 +33,7 @@ data AppInput = AppInput
   , inpMousePos :: V2 Double
   , inpMouseLeft :: Maybe (V2 Double)
   , inpMouseRight :: Maybe (V2 Double)
-  }
+  } deriving Show
 
 initAppInput :: AppInput
 initAppInput = AppInput

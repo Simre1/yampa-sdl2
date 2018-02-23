@@ -38,12 +38,11 @@ data Camera = Camera
 
 container :: V2 Double -> [RenderShape] -> [RenderShape]
 container translateV2 children =
-  fmap (\rs -> rs {
-                 shape=(shape rs){shapeCentre=shapeCentre (shape rs) + translateV2}
-               }) children
+  fmap (\rs -> rs {shapeCentre=shapeCentre rs + translateV2}) children
 
 data RenderShape
-  = RS { shape :: Shape
+  = RS { shapeCentre :: V2 Double
+       , shape :: Shape
        , zIndex :: Int -- ^ Higher zIndex means the RenderShape is in front of the others
        } deriving (Show, Eq)
 data Sound =
