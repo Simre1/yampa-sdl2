@@ -1,6 +1,5 @@
-module YampaSDL2.Backend.Output
+module YampaSDL2.Backend.ExperimentalOutput
   (outputAction) where
-
 import qualified SDL
 import qualified SDL.Primitive as GFX
 import Data.Colour.SRGB
@@ -34,31 +33,36 @@ outputAction fps mvarTextures mvarFPS mvarReady mvarG window renderer _ ao = do
   ready <- readMVar mvarReady
   when (ensureFPS && ready) $ do
     modifyMVar_ mvarReady (\_ -> return False)
-    renderGraphics mvarTextures window renderer (graphics ao)
+    renderGraphics mvarTextures mvarG window renderer (graphics ao)
     modifyMVar_ mvarReady (\_ -> return True)
   return (shouldExit ao)
 
-
-renderGraphics :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
-renderGraphics mvarTextures window renderer gra = do
+-- Experimental render, inefficient right now
+-- Rendering of preprocessed shapes
+renderGraphics :: MVar [(String, (SDL.Texture, V2 Int))] -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
+renderGraphics mvarTextures mvarG window renderer gra = do
   textures <- readMVar mvarTextures
   let newGraphics =
-         adjustToCamera $
-          removeOutOfBounds gra
+        splitObjects textures 100 $
+          adjustToCamera $
+            removeOutOfBounds gra
+  oldObjects <- fromMaybe [] <$> fmap objects <$> swapMVar mvarG (return newGraphics)
   (V2 wW wH) <- fmap (fromIntegral . fromEnum) <$> get (SDL.windowSize window)
   (V2 cW cH) <- return (cSize $ camera gra)
   SDL.rendererScale renderer $= realToFrac <$> (V2 (wW/cW) (wH/cH))
-  render mvarTextures renderer newGraphics
-  
--- Preprocessing rendershapes for rendering
+  render mvarTextures renderer oldObjects gra
 
-render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> Graphics -> IO ()
-render mvarTextures renderer gra = do
+render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> [RenderShape] -> Graphics -> IO ()
+render mvarTextures renderer oldRS gra = do
+  let oldSortedRS = sortBy (\rs1 rs2 -> zIndex rs1 `compare` zIndex rs2) oldRS
+      newSortedRS = sortBy (\rs1 rs2 -> zIndex rs1 `compare` zIndex rs2) (objects gra)
+      obsChanged = checkChanged oldSortedRS newSortedRS
+      rerenderList = render' obsChanged
   mapM_ (renderShape mvarTextures renderer) $
-      sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) (objects gra)
+      sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) newSortedRS
   SDL.present renderer
 
-
+  
 removeOutOfBounds :: Graphics -> Graphics
 removeOutOfBounds graphics =
   let cam = camera graphics
@@ -144,6 +148,110 @@ renderShape mvarTextures renderer renderShape =
           SDL.copy renderer texture (toSDLRect <$> source) (return $ toSDLRect (position,size))
 
 
+
+-- wrapper for RenderShape to add shapes which are not drawn to decide if a rerender is necessary
+data RenderAction = RealAction RenderShape | ShadowAction RenderShape deriving (Show, Eq)
+
+getShape :: RenderAction -> RenderShape
+getShape (RealAction s) = s
+getShape (ShadowAction s) = s
+
+isReal :: RenderAction -> Bool
+isReal (RealAction _) = True
+isReal _ = False
+
+-- TODO: More efficient algorhytm -> delete oldRS elements that are already found;
+checkChanged :: [RenderShape] -> [RenderShape] -> [(Bool, RenderAction)]
+checkChanged oldRS newRS =
+  let changedOldRS = filter (\rs -> rs `notElem` newRS) oldRS
+  in fmap (\rs -> ((not (any (==rs) oldRS) || null oldRS), RealAction rs)) newRS ++ fmap (\rs -> (True, ShadowAction rs)) changedOldRS
+
+-- decide which rendershapes need rendering
+render' :: [(Bool, RenderAction)] -> [RenderShape]
+render' rs = fmap getShape . filter isReal $
+  let unchanged = snd <$> filter (not . fst) rs
+      changed = snd <$> filter fst rs
+  in areUnchangedSame [] unchanged changed
+
+areUnchangedSame :: [RenderAction] -> [RenderAction] -> [RenderAction] -> [RenderAction]
+areUnchangedSame compare unchanged changed
+  | compare == unchanged = changed
+  | otherwise = uncurry (areUnchangedSame unchanged) (checkRenders unchanged $ changed)
+
+
+checkRenders :: [RenderAction] -> [RenderAction] -> ([RenderAction],[RenderAction])
+checkRenders unchanged changed =
+  if null unchanged
+    then ([],changed)
+    else let tests = fmap (\uc -> ((any (checkIfRenderIsNecessary uc) changed),uc)) unchanged
+         in (snd <$> filter (not.fst) tests, changed++(snd <$> filter (fst) tests))
+  where checkIfRenderIsNecessary unchangedObject changedObject =
+             unchangedObject `isColliding` changedObject
+
+
+hasHigherZIndex :: RenderAction -> RenderAction -> Bool
+hasHigherZIndex rs1 rs2 = zIndex (getShape rs1) > zIndex (getShape rs2)
+
+isCoveredBy :: RenderAction -> RenderAction -> Bool
+isCoveredBy a b =
+  let (V4 rr rl rt rb) = shapeToBorders (getShape a)
+      (V4 cr cl ct cb) = shapeToBorders (getShape b)
+  in rr <= cr && rl >= cl && rt <= ct && rb >= cb
+
+-- FIXME: Not sure if this is right
+isColliding :: RenderAction -> RenderAction -> Bool
+isColliding s1 s2 =
+  let (V4 r1 l1 t1 b1) = shapeToBorders (getShape s1)
+      (V4 r2 l2 t2 b2) = shapeToBorders (getShape s2)
+  in (((r2 > l1 && r2 < r1) || (l2 > l1 && l2 < r1)) && ((t2 > b1 && t2 < t1) || (b2 > b1 && b2 < t1)))
+  || (((r1 > l2 && r1 < r2) || (l1 > l2 && l1 < r2)) && ((t1 > b2 && t1 < t2) || (b1 > b2 && b1 < t2)))
+
+-- TODO: Need to properly implement this; Color and Image can be transparent!
+isTransparent :: RenderAction -> Bool
+isTransparent = const False
+
+-- Split objects at every x/givenSize==0 to minimize necessary rendering for big shapes if just a part of them changed.
+
+splitObjects :: [(String, (SDL.Texture, V2 Int))] -> Double -> Graphics -> Graphics
+splitObjects textures givenSize gra =
+  gra{objects=concatMap (splitObjects' textures givenSize) (objects gra)}
+
+splitObjects' :: [(String, (SDL.Texture, V2 Int))] -> Double -> RenderShape -> [RenderShape]
+splitObjects' textures xSize rs =
+ let (V2 x y) = shapeCentre rs
+ in case shape rs of
+    Rectangle{rectSize=V2 w h, colour=c} ->
+      let (firstPoint, sizes) = calculateSize xSize x w
+      in snd $ mapAccumL
+        (\curPos (s,nextS) -> (curPos+s/2+nextS/2,RS (V2 curPos y) (Rectangle (V2 s h) c) (zIndex rs)))
+        firstPoint
+        sizes
+    Image{size=V2 w h,imgPath=path,sourceRect=maybeRect} ->
+      let sourceR = (flip fromMaybe) maybeRect <$> (\(_,s) -> ((fromIntegral <$> s)/2, fromIntegral <$> s)) <$> lookup path textures
+      in case sourceR of
+        Just (V2 sX sY,V2 sW sH) ->
+          let (firstPoint, sizes) = calculateSize xSize x w
+          in snd $ mapAccumL
+             (\curPos (s,nextS) -> (curPos+s/2+nextS/2,RS (V2 curPos y) (Image (V2 s h) (return (V2 (curPos*sW/w) sY, V2 ((sW/w)*s) sH)) path) (zIndex rs)))
+             firstPoint
+             sizes
+
+        Nothing -> [rs]
+    otherwise -> [rs]
+  where calculateSize :: Double -> Double -> Double -> (Double, [(Double,Double)])
+        calculateSize preferredSize screenPos actualWidth =
+          let leftSide = screenPos - (actualWidth / 2)
+              firstSize = preferredSize - fromIntegral (round leftSide `rem` round preferredSize)
+          in if firstSize < actualWidth
+                then let lastSize = fromIntegral $ round (actualWidth - firstSize) `rem` round preferredSize
+                         howManyNormal = round $ (actualWidth - (lastSize + firstSize)) / preferredSize
+                         firstPoint = leftSide + (firstSize / 2)
+
+                         sizes = firstSize:replicate howManyNormal preferredSize++if lastSize /= 0 then [lastSize] else []
+                     in (firstPoint, sizes `zip` (tail sizes ++ [0]))
+                else (leftSide+actualWidth / 2,[(actualWidth,0)])
+
+
 -- helper functions
 shapeToBorders :: RenderShape -> V4 Double
 shapeToBorders rs =
@@ -171,3 +279,6 @@ sFilled s =
   case colour s of
     (Filled _) -> True
     (Unfilled _) -> False
+
+getY :: V2 a -> a
+getY (V2 _ y) = y
