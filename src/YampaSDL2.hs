@@ -44,8 +44,11 @@ import YampaSDL2.Geometry
 import YampaSDL2.MainLoop (mainLoop)
 import YampaSDL2.Animation
   ( Animation
-  , AnimationType(..)
   , animate
-  , newAnimation
+  , xAnimation
+  , yAnimation
+  , linear
+  , easeIn
+  , easeOut
   )
 import YampaSDL2.Backend.SDL (sdlBackend)

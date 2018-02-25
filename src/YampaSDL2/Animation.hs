@@ -6,40 +6,85 @@ Description : Provide an easy way to do animations
 
 module YampaSDL2.Animation
   ( -- * Animation
-    animate
-  , Animation(..)
-  , AnimationType(..)
-  , newAnimation
+    Animation
+  , animate
+  , xAnimation
+  , yAnimation
+  , linear
+  , easeIn
+  , easeOut
   ) where
 
 import FRP.Yampa
+import Linear.V2
+import Data.Maybe
+import FRP.Yampa.Event
+import Data.List
+import Data.Colour
 
-import YampaSDL2.AppOutput (RenderShape)
+import YampaSDL2.Geometry
+import YampaSDL2.AppOutput (RenderShape(..))
 
+-- | Apply animation to a RenderShape.
+-- The animations in the list are executed on after another. You can combine animations with mappend.
+animate :: [Animation] -> RenderShape -> SF a RenderShape
+animate [] rs = constant rs
+animate (a:as) rs = switch (sf rs a) (cont as)
+  where sf rs animation = proc _ -> do
+          currentRS <- (fun animation) rs ^<< time -< ()
+          event <- after (dur animation) () -< ()
+          returnA -< (currentRS,tag event currentRS)
+        cont animations rs = animate animations rs
+
+type Duration = Double
+
+ -- | Animation which works on every RenderShape. Animation is an instance of Monoid. Therefore you can combine multiple animations with mappend.
 data Animation = Animation
-  { frames :: [(Time, RenderShape)] -- ^ Time specifies how long the RenderShape is displayed, for example [(0.5, renderShape1), (0.5, renderShape2)]
-  , type_ :: AnimationType
+  { fun :: (RenderShape -> Double -> RenderShape)
+  , dur :: Duration
   }
 
-newAnimation = Animation
+instance Monoid Animation where
+  mempty = Animation const 0
+  a `mappend` b = Animation (\start t -> (fun b) ((fun a) start t) t) (max (dur a) (dur b))
 
-data AnimationType = Once | Endless | Repeat Int | Alternate | AlternateEndless
 
-animate :: Animation -> SF a (Maybe RenderShape)
-animate animation
-  | (null $ frames animation) = constant Nothing
-  | otherwise = proc _ -> do
-      frameEvent <- afterEach (getFrames animation) -< ()
-      frame <- hold initialFrame -< frameEvent
-      returnA -< return frame
-        where initialFrame = let (_,frame) = head $ frames animation
-                       in frame
+-- Animation curves
 
-getFrames :: Animation -> [(Time, RenderShape)]
-getFrames (Animation{frames=frames,type_=type_}) =
-  case type_ of
-    Once -> frames
-    Endless -> cycle frames
-    Repeat times -> concat $ replicate times frames
-    Alternate -> frames ++ reverse frames
-    AlternateEndless -> cycle (frames ++ reverse frames)
+linear :: Double -> Double
+linear = id
+
+easeIn :: Double -> Double
+easeIn x = x * x
+
+easeOut :: Double -> Double
+easeOut x = sqrt x
+
+
+-- Animatable attributes
+
+yAnimation :: Double -> (Double -> Double) -> Duration -> Animation
+yAnimation = generateAnimation changeAttr
+  where changeAttr attr extent rs =
+          let (V2 xP yP) = shapeCentre rs
+          in rs{shapeCentre=V2 xP (yP+attr*extent)}
+
+xAnimation :: Double -> (Double -> Double) -> Duration -> Animation
+xAnimation = generateAnimation changeAttr
+  where changeAttr attr extent rs =
+          let (V2 xP yP) = shapeCentre rs
+          in rs{shapeCentre=V2 (xP+attr*extent) yP}
+
+-- Helper functions
+
+boundExtent :: (Double -> Double) -> Double -> Double
+boundExtent f time
+  | f time < 0 = 0
+  | f time > 1 = 1
+  | otherwise = f time
+
+generateAnimation :: (a -> Double -> RenderShape -> RenderShape) -> a -> (Double -> Double) -> Duration -> Animation
+generateAnimation attribute end extent duration =
+  let animation start t = attribute end (boundExtent extent (t/duration)) start
+
+  in Animation animation duration
