@@ -51,29 +51,37 @@ instance Monoid Animation where
 
 -- Animation curves
 
-linear :: Double -> Double
+type Curve = Double -> Double
+
+linear :: Curve
 linear = id
 
-easeIn :: Double -> Double
+easeIn :: Curve
 easeIn x = x * x
 
-easeOut :: Double -> Double
+easeOut :: Curve
 easeOut x = sqrt x
 
 
 -- Animatable attributes
 
-yAnimation :: Double -> (Double -> Double) -> Duration -> Animation
+yAnimation :: Double -> Curve -> Duration -> Animation
 yAnimation = generateAnimation changeAttr
   where changeAttr attr extent rs =
           let (V2 xP yP) = shapeCentre rs
           in rs{shapeCentre=V2 xP (yP+attr*extent)}
 
-xAnimation :: Double -> (Double -> Double) -> Duration -> Animation
+xAnimation :: Double -> Curve -> Duration -> Animation
 xAnimation = generateAnimation changeAttr
   where changeAttr attr extent rs =
           let (V2 xP yP) = shapeCentre rs
           in rs{shapeCentre=V2 (xP+attr*extent) yP}
+
+colorAnimation :: AlphaColour -> Curve -> Duration -> Animation
+colorAnimation = generateAnimation changeAttr
+  where changeAttr attr extent rs =
+          let c = colour rs
+          in changeColour 
 
 -- Helper functions
 

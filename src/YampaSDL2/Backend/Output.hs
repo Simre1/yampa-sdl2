@@ -45,12 +45,12 @@ renderGraphics mvarTextures window renderer gra = do
   (V2 cW cH) <- return (cSize $ camera gra)
   SDL.rendererScale renderer $= realToFrac <$> (V2 (wW/cW) (wH/cH))
   render mvarTextures renderer newGraphics
-  
+
 -- Preprocessing rendershapes for rendering
 
 render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> Graphics -> IO ()
 render mvarTextures renderer gra = do
-  mapM_ (renderObject mvarTextures renderer) $
+  mapM_ (\r -> (render r) mvarTextures renderer) $
       sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) (objects gra)
   SDL.present renderer
 
@@ -62,7 +62,7 @@ removeOutOfBounds graphics =
       (V2 bR bT) =  cPos cam + cSize cam/2
       (V2 bL bB) = cPos cam - cSize cam/2
       notOutOfBounds s = not $
-        let (V4 r l u d) = shapeToBorders s
+        let (V4 r l  u d) = bounds s
         in r < bL || l > bR || u < bB || d > bT
   in graphics{objects=filter (notOutOfBounds) objs}
 
@@ -70,40 +70,31 @@ adjustToCamera :: Graphics -> Graphics
 adjustToCamera gra =
   let cam = camera gra
       obs = objects gra
-  in gra{objects = (\rs -> adjustToCamera' cam rs) <$> obs}
+  in gra{objects = adjustToCamera' cam <$> obs}
 
 
-adjustToCamera' :: Camera -> RenderShape -> RenderShape
+adjustToCamera' :: Camera -> RenderObject -> RenderObject
 adjustToCamera' c rs =
   let (V2 cx cy) = cPos c
       (V2 w h) = cSize c
       adjustPoint (V2 x y) = V2 (x+w/2-cx) (h/2-(y+cy))
-      inverseY (V2 x y) = V2 x (-y)
-      adjustedCentre = adjustPoint (shapeCentre rs)
-      adjustedShape s = case s of
-       Triangle{ pointA=pA, pointB=pB, pointC=pC} ->
-         s{pointA=inverseY pA, pointB = inverseY pB, pointC=inverseY pC}
-       otherwise -> s
-  in case rs of
-    Image{} -> rs{shapeCentre=adjustedCentre}
-    Object{} -> rs{shapeCentre=adjustedCentre, shape=adjustedShape (shape rs)}
-
+  in modifyCenter adjustPoint rs
 
 -- helper functions
-shapeToBorders :: RenderShape -> V4 Double
-shapeToBorders rs =
-  case rs of
-    Image {shapeCentre=V2 x y, size=V2 w h} ->
-      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
-    Object {shapeCentre=V2 x y} ->
-      let s = shape rs
-          (V2 x y) = shapeCentre rs
-      in case s of
-        Rectangle {rectSize=V2 w h} ->
-          V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
-        Circle {radius=r} ->
-          V4 (x+r) (x-r) (y+r) (y-r)
-        Triangle {pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
-          V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
+-- shapeToBorders :: RenderShape -> V4 Double
+-- shapeToBorders rs =
+--   case rs of
+--     Image {shapeCentre=V2 x y, size=V2 w h} ->
+--       V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+--     Object {shapeCentre=V2 x y} ->
+--       let s = shape rs
+--           (V2 x y) = shapeCentre rs
+--       in case s of
+--         Rectangle {rectSize=V2 w h} ->
+--           V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+--         Circle {radius=r} ->
+--           V4 (x+r) (x-r) (y+r) (y-r)
+--         Triangle {pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
+--           V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
 
 
