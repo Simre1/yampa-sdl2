@@ -8,6 +8,7 @@ module YampaSDL2
   , module YampaSDL2.Animation
   , module Data.Colour.Names
   , module Data.Colour.SRGB
+  , module Data.Colour
   , module Linear.V2
   , module SDL.Input.Keyboard.Codes
   ) where
@@ -15,40 +16,12 @@ module YampaSDL2
 import Linear.V2
 import Data.Colour.Names
 import Data.Colour.SRGB
+import Data.Colour
 import SDL.Input.Keyboard.Codes
-
 import YampaSDL2.AppInput
-  ( AppInput
-  , quit
-  , anyKeyActive
-  , anyKeyPress
-  , mouseLeftActive
-  , mouseLeftPress
-  , mouseRightActive
-  , mouseRightPress
-  , mousePosition
-  )
 import YampaSDL2.AppOutput
-  ( AppOutput(..)
-  , Graphics(..)
-  , Sound(..)
-  , RenderShape(..)
-  , Camera(..)
-  , container
-  )
-import YampaSDL2.Backend (defaultBackendConfiguration, BackendConfiguration(..))
+import YampaSDL2.Backend
 import YampaSDL2.Geometry
-  ( Shape(..)
-  , ShapeColour(..)
-  )
-import YampaSDL2.MainLoop (mainLoop)
+import YampaSDL2.MainLoop
 import YampaSDL2.Animation
-  ( Animation
-  , animate
-  , xAnimation
-  , yAnimation
-  , linear
-  , easeIn
-  , easeOut
-  )
-import YampaSDL2.Backend.SDL (sdlBackend)
+import YampaSDL2.Backend.SDL

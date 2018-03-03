@@ -8,6 +8,7 @@ import SDL.Vect
 import Control.Concurrent.MVar
 import FRP.Yampa
 import Data.Text (pack)
+import Data.StateVar (($=))
 
 import qualified YampaSDL2.Backend.Init as Init
 import qualified YampaSDL2.Backend.Input as Input
@@ -26,6 +27,7 @@ sdlBackend bc = do
   window <- SDL.createWindow (pack $ windowName bc) windowConf
   SDL.showWindow window
   renderer <- SDL.createRenderer window (-1) SDL.defaultRenderer
+  SDL.rendererDrawBlendMode renderer $= SDL.BlendAlphaBlend
   lastInteraction <- newMVar =<< SDL.time
   lastGraphics <- newMVar Nothing
   lastRender <- newMVar 0
@@ -45,5 +47,5 @@ sdlBackend bc = do
       { SDL.windowInitialSize =
           V2 (fromIntegral (windowWidth bc)) (fromIntegral (windowHeight bc))
         , SDL.windowResizable = windowResizable (bc)
-      } 
+      }
 

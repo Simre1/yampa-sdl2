@@ -5,7 +5,6 @@ import qualified SDL
 import qualified SDL.Primitive as GFX
 import Data.Colour.SRGB
 import Control.Monad
-import Control.Exception
 import Linear.V4
 import Linear.V2
 import Data.Maybe
@@ -13,15 +12,12 @@ import Control.Concurrent.MVar
 import Data.StateVar (($=), get)
 import Data.List
 import Data.Colour.Names
+import Data.Colour
 import Debug.Trace
 
-import YampaSDL2.AppOutput ( AppOutput(..)
-                           , Graphics (..)
-                           , Camera (..)
-                           , RenderShape (..)
-                           )
+import YampaSDL2.AppOutput
 import YampaSDL2.Geometry
-
+import YampaSDL2.Backend.RenderObject
 
 -- changed bool variable does not do anything
 outputAction :: Double -> MVar [(String, (SDL.Texture, V2 Int))]-> MVar Double -> MVar Bool -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
@@ -54,7 +50,7 @@ renderGraphics mvarTextures window renderer gra = do
 
 render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> Graphics -> IO ()
 render mvarTextures renderer gra = do
-  mapM_ (renderShape mvarTextures renderer) $
+  mapM_ (renderObject mvarTextures renderer) $
       sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) (objects gra)
   SDL.present renderer
 
@@ -81,93 +77,33 @@ adjustToCamera' :: Camera -> RenderShape -> RenderShape
 adjustToCamera' c rs =
   let (V2 cx cy) = cPos c
       (V2 w h) = cSize c
-      s = shape rs
       adjustPoint (V2 x y) = V2 (x+w/2-cx) (h/2-(y+cy))
       inverseY (V2 x y) = V2 x (-y)
       adjustedCentre = adjustPoint (shapeCentre rs)
-      adjustedShape = case s of
+      adjustedShape s = case s of
        Triangle{ pointA=pA, pointB=pB, pointC=pC} ->
          s{pointA=inverseY pA, pointB = inverseY pB, pointC=inverseY pC}
        otherwise -> s
-  in rs{shapeCentre=adjustedCentre, shape=adjustedShape}
-
--- actual renderfunction
-renderShape :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> RenderShape -> IO ()
-renderShape mvarTextures renderer renderShape =
-      let shape' = shape renderShape
-          centre' = shapeCentre renderShape
-      in case shape' of
-        Rectangle {rectSize = rectSize'} -> do
-          let (RGB r g b) = toSRGB24 (sColour shape')
-          let draw = if sFilled shape' then GFX.fillRectangle else GFX.rectangle
-          draw renderer
-            (round <$> centre'-rectSize'/2)
-            (round <$> centre'+rectSize'/2)
-            (V4 r g b maxBound)
-        Circle {radius=rad'} -> do
-          let (RGB r g b) = toSRGB24 (sColour shape')
-          let draw = if sFilled shape' then GFX.fillCircle else GFX.circle
-          draw renderer
-            (round <$> centre')
-            (round rad')
-            (V4 r g b maxBound)
-        Triangle {pointA=V2 pax pay, pointB=V2 pbx pby, pointC=V2 pcx pcy, colour=c'} -> do
-          let (RGB r g b) = toSRGB24 (sColour shape')
-              (V2 x y) = centre'
-              draw = if sFilled shape' then GFX.fillTriangle else GFX.smoothTriangle
-          draw renderer
-            (round <$> V2 (x + pax) (y + pay))
-            (round <$> V2 (x + pbx) (y + pby))
-            (round <$> V2 (x + pcx) (y + pcy))
-            (V4 r g b maxBound)
-        Image {size=size', sourceRect=maybeRect, imgPath=path} -> do
-          textures <- readMVar mvarTextures
-          case lookup path textures of
-              (Just (t,size)) ->
-                let newSize = fromMaybe ((fromIntegral<$>size)/2, fromIntegral <$> size) maybeRect
-                in drawImage renderer t (return newSize) centre' size'
-              Nothing -> do
-                eitherSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
-                case eitherSurface of
-                  Left ex -> putStrLn $ "IMG Loading failed: " ++ show ex
-                  Right val -> do
-
-                    newTexture <- SDL.createTextureFromSurface renderer val
-                    attrs <- SDL.queryTexture newTexture
-                    let w = SDL.textureWidth attrs
-                        h = SDL.textureHeight attrs
-                    modifyMVar_ mvarTextures $ return . ((path,(newTexture, fromEnum <$> V2 w h)):)
-                    drawImage renderer newTexture maybeRect centre' size'
-  where drawImage renderer texture source position size = do
-          let toSDLRect (V2 x y, V2 w h) =
-                SDL.Rectangle (round <$> SDL.P (V2 (x-w/2) (y-h/2))) (round <$> V2 w h)
-          SDL.copy renderer texture (toSDLRect <$> source) (return $ toSDLRect (position,size))
+  in case rs of
+    Image{} -> rs{shapeCentre=adjustedCentre}
+    Object{} -> rs{shapeCentre=adjustedCentre, shape=adjustedShape (shape rs)}
 
 
 -- helper functions
 shapeToBorders :: RenderShape -> V4 Double
 shapeToBorders rs =
-  let s = shape rs
-      (V2 x y) = shapeCentre rs
-  in case s of
-    Rectangle {rectSize=V2 w h} ->
+  case rs of
+    Image {shapeCentre=V2 x y, size=V2 w h} ->
       V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
-    Circle {radius=r} ->
-      V4 (x+r) (x-r) (y+r) (y-r)
-    Triangle {pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
-      V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
-    Image {size=V2 w h} ->
-      V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+    Object {shapeCentre=V2 x y} ->
+      let s = shape rs
+          (V2 x y) = shapeCentre rs
+      in case s of
+        Rectangle {rectSize=V2 w h} ->
+          V4 (x+w/2) (x-w/2) (y+h/2) (y-h/2)
+        Circle {radius=r} ->
+          V4 (x+r) (x-r) (y+r) (y-r)
+        Triangle {pointA=V2 xa ya, pointB=V2 xb yb, pointC=V2 xc yc} ->
+          V4 (x+maximum [xa, xb, xc]) (x+minimum [xa, xb, xc]) (y+maximum [ya,yb,yc]) (y-maximum [ya,yb,yc])
 
 
-sColour :: Shape -> Colour Double
-sColour s =
-  case colour s of
-    (Filled a) -> a
-    (Unfilled a) -> a
-
-sFilled :: Shape -> Bool
-sFilled s =
-  case colour s of
-    (Filled _) -> True
-    (Unfilled _) -> False

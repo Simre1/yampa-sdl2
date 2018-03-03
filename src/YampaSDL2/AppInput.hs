@@ -29,7 +29,7 @@ import Linear.V2
 -- | Your main SF receives AppInput as input
 data AppInput = AppInput
   { inpQuit :: Bool
-  , inpKey :: Maybe Scancode
+  , inpKey :: [Scancode]
   , inpMousePos :: V2 Double
   , inpMouseLeft :: Maybe (V2 Double)
   , inpMouseRight :: Maybe (V2 Double)
@@ -38,7 +38,7 @@ data AppInput = AppInput
 initAppInput :: AppInput
 initAppInput = AppInput
   { inpQuit = False
-  , inpKey = Nothing
+  , inpKey = []
   , inpMousePos = V2 0 0
   , inpMouseLeft = Nothing
   , inpMouseRight = Nothing
@@ -47,11 +47,11 @@ initAppInput = AppInput
 quit :: SF AppInput (Event ())
 quit = inpQuit ^>> edge
 
-anyKeyActive :: SF AppInput (Event Scancode)
-anyKeyActive = inpKey ^>> arr maybeToEvent
+anyKeyActive :: SF AppInput (Event [Scancode])
+anyKeyActive = inpKey ^>> (\e -> if e == [] then Nothing else return e) ^>> arr maybeToEvent
 
-anyKeyPress :: SF AppInput (Event Scancode)
-anyKeyPress = inpKey ^>> edgeJust
+anyKeyPress :: SF AppInput (Event [Scancode])
+anyKeyPress = inpKey ^>> (\e -> if e == [] then Nothing else return e) ^>> edgeJust
 
 mouseLeftActive :: SF AppInput (Event (V2 Double))
 mouseLeftActive = inpMouseLeft ^>> arr maybeToEvent

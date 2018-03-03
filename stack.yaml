@@ -1,5 +1,7 @@
 flags: {}
 packages:
 - .
+- colour
 extra-deps:
+- monad-memo-0.4.1
 resolver: lts-9.20

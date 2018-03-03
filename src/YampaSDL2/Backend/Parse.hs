@@ -14,13 +14,10 @@ onSDLInput :: AppInput -> SDL.EventPayload -> AppInput
 onSDLInput ai SDL.QuitEvent = ai {inpQuit = True}
 onSDLInput ai (SDL.KeyboardEvent ev)
   | SDL.keyboardEventKeyMotion ev == SDL.Pressed =
-    ai {inpKey = Just $ getKeyCode ev}
+    ai {inpKey = filter (/=getKeyCode ev )(inpKey ai) `mappend` [getKeyCode ev]}
   | SDL.keyboardEventKeyMotion ev == SDL.Released =
     ai
-    { inpKey =
-        if inpKey ai == return (getKeyCode ev)
-          then Nothing
-          else inpKey ai
+    { inpKey = filter (/=getKeyCode ev) (inpKey ai)
     }
   where
     getKeyCode = SDL.keysymScancode . SDL.keyboardEventKeysym
