@@ -31,13 +31,13 @@ sdlBackend bc = do
   lastInteraction <- newMVar =<< SDL.time
   lastGraphics <- newMVar Nothing
   lastRender <- newMVar 0
-  imageTextures <- newMVar []
+  cache <- newMVar []
   ready <- newMVar True
   return $
     Backend
     { initAction = Init.initAction
     , inputAction = Input.inputAction lastInteraction
-    , outputAction = Output.outputAction (fps bc) imageTextures lastRender ready lastGraphics window renderer
+    , outputAction = Output.outputAction cache (fps bc) lastRender ready lastGraphics window renderer
     , parseInput = Parse.parseInput
     , closeAction = Close.closeAction renderer window
     }

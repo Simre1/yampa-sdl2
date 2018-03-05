@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 985c6ac66ebbe3e0cc6a4cbc7b966426a39eec76416c5e92d001dc32e271a8b9
+-- hash: 79218e7ce34ead127eee5c36d15d962e1dc93d2d08986fb8e920050b477cfc84
 
 name:           yampa-sdl2
 version:        0.0.3.3
@@ -36,18 +36,21 @@ library
       YampaSDL2.Backend.Parse
       YampaSDL2.Backend.RenderObject
       YampaSDL2.Backend.SDL
-      YampaSDL2.Geometry
       YampaSDL2.MainLoop
+      YampaSDL2.RenderObjects.Circle
+      YampaSDL2.RenderObjects.Image
+      YampaSDL2.RenderObjects.Rectangle
       Paths_yampa_sdl2
   hs-source-dirs:
       src
+  ghc-options: -O2
   build-depends:
       StateVar
     , Yampa
     , base >=4.7 && <5
     , colour
     , linear
-    , monad-memo
+    , memoize
     , sdl2
     , sdl2-gfx
     , stm
@@ -68,7 +71,7 @@ test-suite YampaSDL2-test
     , base
     , colour
     , linear
-    , monad-memo
+    , memoize
     , sdl2
     , sdl2-gfx
     , stm

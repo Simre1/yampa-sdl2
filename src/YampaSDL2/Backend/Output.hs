@@ -16,12 +16,10 @@ import Data.Colour
 import Debug.Trace
 
 import YampaSDL2.AppOutput
-import YampaSDL2.Geometry
-import YampaSDL2.Backend.RenderObject
 
 -- changed bool variable does not do anything
-outputAction :: Double -> MVar [(String, (SDL.Texture, V2 Int))]-> MVar Double -> MVar Bool -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
-outputAction fps mvarTextures mvarFPS mvarReady mvarG window renderer _ ao = do
+outputAction :: Cache -> Double -> MVar Double -> MVar Bool -> MVar (Maybe Graphics) -> SDL.Window -> SDL.Renderer -> Bool -> AppOutput -> IO Bool
+outputAction mvarCache fps mvarFPS mvarReady mvarG window renderer _ ao = do
   lastTime <- readMVar mvarFPS
   currentTime <- SDL.time
   ensureFPS <- if currentTime - lastTime > 1/fps
@@ -30,27 +28,26 @@ outputAction fps mvarTextures mvarFPS mvarReady mvarG window renderer _ ao = do
   ready <- readMVar mvarReady
   when (ensureFPS && ready) $ do
     modifyMVar_ mvarReady (\_ -> return False)
-    renderGraphics mvarTextures window renderer (graphics ao)
+    renderGraphics mvarCache window renderer (graphics ao)
     modifyMVar_ mvarReady (\_ -> return True)
   return (shouldExit ao)
 
 
-renderGraphics :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
-renderGraphics mvarTextures window renderer gra = do
-  textures <- readMVar mvarTextures
+renderGraphics :: Cache -> SDL.Window -> SDL.Renderer -> Graphics -> IO ()
+renderGraphics mvarCache window renderer gra = do
   let newGraphics =
          adjustToCamera $
           removeOutOfBounds gra
   (V2 wW wH) <- fmap (fromIntegral . fromEnum) <$> get (SDL.windowSize window)
   (V2 cW cH) <- return (cSize $ camera gra)
   SDL.rendererScale renderer $= realToFrac <$> (V2 (wW/cW) (wH/cH))
-  render mvarTextures renderer newGraphics
+  renderObjects mvarCache renderer newGraphics
 
 -- Preprocessing rendershapes for rendering
 
-render :: MVar [(String, (SDL.Texture, V2 Int))] -> SDL.Renderer -> Graphics -> IO ()
-render mvarTextures renderer gra = do
-  mapM_ (\r -> (render r) mvarTextures renderer) $
+renderObjects :: Cache -> SDL.Renderer -> Graphics -> IO ()
+renderObjects mvarCache renderer gra = do
+  mapM_ (\r -> (render r) mvarCache (center r) renderer) $
       sortBy (\r1 r2 -> zIndex r1 `compare` zIndex r2) (objects gra)
   SDL.present renderer
 
@@ -62,7 +59,7 @@ removeOutOfBounds graphics =
       (V2 bR bT) =  cPos cam + cSize cam/2
       (V2 bL bB) = cPos cam - cSize cam/2
       notOutOfBounds s = not $
-        let (V4 r l  u d) = bounds s
+        let (V4 u r d l) = bounds s
         in r < bL || l > bR || u < bB || d > bT
   in graphics{objects=filter (notOutOfBounds) objs}
 

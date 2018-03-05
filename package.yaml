@@ -22,11 +22,12 @@ dependencies:
   - linear
   - stm
   - vector
-  - monad-memo
+  - memoize
 
 library:
   source-dirs:      src
   exposed-modules: [YampaSDL2]
+  ghc-options: [-O2]
 tests:
   YampaSDL2-test:
     main: Main.hs

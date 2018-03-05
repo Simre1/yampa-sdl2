@@ -3,5 +3,5 @@ packages:
 - .
 - colour
 extra-deps:
-- monad-memo-0.4.1
+- memoize-0.8.1
 resolver: lts-9.20
