@@ -2,13 +2,13 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 79218e7ce34ead127eee5c36d15d962e1dc93d2d08986fb8e920050b477cfc84
+-- hash: e826b144e75a4b99dcc27a9c77dcb6abac127a73e1b91e51e517d7a8173b02df
 
 name:           yampa-sdl2
-version:        0.0.3.3
+version:        0.1.0.0
 synopsis:       Yampa and SDL2 made easy
 description:    yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
-category:       Graphics
+category:       Scene
 homepage:       https://github.com/Simre1/YampaSDL2#readme
 author:         Simre
 maintainer:     simre4775@gmail.com
@@ -24,22 +24,25 @@ extra-source-files:
 library
   exposed-modules:
       YampaSDL2
+      YampaSDL2.Draw
+      YampaSDL2.Drawable.Circle
+      YampaSDL2.Drawable.Image
+      YampaSDL2.Drawable.Rectangle
+      YampaSDL2.Init
+      YampaSDL2.InputOutput
+      YampaSDL2.Internal.Animation
+      YampaSDL2.Internal.AppInput
+      YampaSDL2.Internal.AppOutput
+      YampaSDL2.Internal.MainLoop
+      YampaSDL2.Internal.SDL
+      YampaSDL2.Internal.SDL.Close
+      YampaSDL2.Internal.SDL.Init
+      YampaSDL2.Internal.SDL.Input
+      YampaSDL2.Internal.SDL.Output
+      YampaSDL2.Internal.SDL.Parse
+      YampaSDL2.Internal.SDL.Start
+      YampaSDL2.ReExports
   other-modules:
-      YampaSDL2.Animation
-      YampaSDL2.AppInput
-      YampaSDL2.AppOutput
-      YampaSDL2.Backend
-      YampaSDL2.Backend.Close
-      YampaSDL2.Backend.Init
-      YampaSDL2.Backend.Input
-      YampaSDL2.Backend.Output
-      YampaSDL2.Backend.Parse
-      YampaSDL2.Backend.RenderObject
-      YampaSDL2.Backend.SDL
-      YampaSDL2.MainLoop
-      YampaSDL2.RenderObjects.Circle
-      YampaSDL2.RenderObjects.Image
-      YampaSDL2.RenderObjects.Rectangle
       Paths_yampa_sdl2
   hs-source-dirs:
       src
@@ -52,8 +55,6 @@ library
     , linear
     , memoize
     , sdl2
-    , sdl2-gfx
-    , stm
     , text
     , vector
   default-language: Haskell2010
@@ -73,8 +74,6 @@ test-suite YampaSDL2-test
     , linear
     , memoize
     , sdl2
-    , sdl2-gfx
-    , stm
     , text
     , vector
     , yampa-sdl2

@@ -11,7 +11,7 @@ main = do
 mainSF :: SF AppInput AppOutput
 mainSF = proc _ -> do
   returnA -< AppOutput
-               { graphics = Graphics
+               { scene = Scene
                  { camera = myCamera
                  , objects = [whiteBackground, blueCircle]
                  }

@@ -7,7 +7,7 @@ Author:              Russell O'Connor
 Maintainer:          Russell O'Connor <roconnor@theorem.ca>
 Homepage:            http://www.haskell.org/haskellwiki/Colour
 Build-Type:          Simple
-Category:            data, graphics
+Category:            data, scene
 Synopsis:            A model for human colour/color perception
 Description:         This package provides a data type for colours and transparency.
                      Colours can be blended and composed.

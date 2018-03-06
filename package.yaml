@@ -1,5 +1,5 @@
 name:                yampa-sdl2
-version:             0.0.3.3 
+version:             0.1.0.0 
 synopsis:            Yampa and SDL2 made easy
 description:         yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
 homepage:            https://github.com/Simre1/YampaSDL2#readme
@@ -7,7 +7,7 @@ license:             MIT
 author:              Simre
 maintainer:          simre4775@gmail.com
 copyright:           2018 Simre
-category:            Graphics
+category:            Scene
 extra-source-files:
 - README.md
 
@@ -15,18 +15,15 @@ dependencies:
   - base >= 4.7 && < 5
   - Yampa
   - sdl2
-  - sdl2-gfx
   - colour
   - StateVar
   - text
   - linear
-  - stm
   - vector
   - memoize
 
 library:
   source-dirs:      src
-  exposed-modules: [YampaSDL2]
   ghc-options: [-O2]
 tests:
   YampaSDL2-test:

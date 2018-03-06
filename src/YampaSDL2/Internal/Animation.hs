@@ -2,9 +2,8 @@
 Module      : Animation
 Description : Provide an easy way to do animations
 -}
-{-# Language Arrows #-}
 
-module YampaSDL2.Animation
+module YampaSDL2.Internal.Animation
   ( -- * Animation
   ) where
 
@@ -15,7 +14,7 @@ import FRP.Yampa.Event
 import Data.List
 import Data.Colour
 
-import YampaSDL2.AppOutput
+import YampaSDL2.Internal.AppOutput
 
 -- | Apply animation to a RenderShape.
 -- The animations in the list are executed on after another. You can combine animations with mappend-- .

@@ -1,11 +1,12 @@
-module YampaSDL2.Backend.Parse
-  (parseInput) where
+module YampaSDL2.Internal.SDL.Parse
+  ( parseInput
+  ) where
 
+import FRP.Yampa
 import qualified SDL
 import SDL.Vect
-import FRP.Yampa
 
-import YampaSDL2.AppInput (AppInput(..), initAppInput)
+import YampaSDL2.Internal.AppInput (AppInput(..), initAppInput)
 
 parseInput :: SF (Event SDL.EventPayload) AppInput
 parseInput = accumHoldBy onSDLInput initAppInput
@@ -14,11 +15,10 @@ onSDLInput :: AppInput -> SDL.EventPayload -> AppInput
 onSDLInput ai SDL.QuitEvent = ai {inpQuit = True}
 onSDLInput ai (SDL.KeyboardEvent ev)
   | SDL.keyboardEventKeyMotion ev == SDL.Pressed =
-    ai {inpKey = filter (/=getKeyCode ev )(inpKey ai) `mappend` [getKeyCode ev]}
-  | SDL.keyboardEventKeyMotion ev == SDL.Released =
     ai
-    { inpKey = filter (/=getKeyCode ev) (inpKey ai)
-    }
+    {inpKey = filter (/= getKeyCode ev) (inpKey ai) `mappend` [getKeyCode ev]}
+  | SDL.keyboardEventKeyMotion ev == SDL.Released =
+    ai {inpKey = filter (/= getKeyCode ev) (inpKey ai)}
   where
     getKeyCode = SDL.keysymScancode . SDL.keyboardEventKeysym
 onSDLInput ai (SDL.MouseMotionEvent ev) =
@@ -40,4 +40,3 @@ onSDLInput ai (SDL.MouseButtonEvent ev) =
         _ -> id
     (lmb, rmb) = inpMod $ (inpMouseLeft &&& inpMouseRight) ai
 onSDLInput ai _ = ai
-

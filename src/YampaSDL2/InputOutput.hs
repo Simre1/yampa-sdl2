@@ -1,23 +1,31 @@
-{-|
-Module      : Input
-Description : Contains all input SF functions
--}
-
-{-# Language Arrows #-}
-
-module YampaSDL2.AppInput
+module YampaSDL2.InputOutput
   ( -- * Input
-    AppInput(..)
-  , initAppInput
-    -- ** SFs
-  , quit
-  , anyKeyActive
-  , anyKeyPress
+    AppInput
+    -- ** Input Signals
   , mouseLeftActive
   , mouseLeftPress
   , mouseRightActive
   , mouseRightPress
-  , mousePosition
+  , anyKeyActive
+  , anyKeyPress
+  , quit
+  -- * Output
+  , AppOutput (..)
+  , output
+  -- ** Scene
+  , Scene (..)
+  , render
+  -- *** Camera
+  , Camera (..)
+  , camera
+  -- *** RenderObject
+  , Center
+  , Bounds
+  , Cache
+  , RenderObject (..)
+  , ShapeColour (..)
+  -- ** Sound
+  , Sound (..)
   ) where
 
 import FRP.Yampa
@@ -26,23 +34,21 @@ import Data.Maybe (isJust)
 import SDL.Input.Keyboard.Codes
 import Linear.V2
 
--- | Your main SF receives AppInput as input
-data AppInput = AppInput
-  { inpQuit :: Bool
-  , inpKey :: [Scancode]
-  , inpMousePos :: V2 Double
-  , inpMouseLeft :: Maybe (V2 Double)
-  , inpMouseRight :: Maybe (V2 Double)
-  } deriving Show
+import YampaSDL2.Internal.AppInput
+import YampaSDL2.Internal.AppOutput
 
-initAppInput :: AppInput
-initAppInput = AppInput
-  { inpQuit = False
-  , inpKey = []
-  , inpMousePos = V2 0 0
-  , inpMouseLeft = Nothing
-  , inpMouseRight = Nothing
-  }
+-- Output
+
+output :: Scene -> [Sound] -> Bool -> AppOutput
+output = AppOutput
+
+camera :: V2 Double -> V2 Double -> Camera
+camera = Camera
+
+render :: Camera -> [RenderObject] -> Scene
+render = Scene
+
+-- Input
 
 quit :: SF AppInput (Event ())
 quit = inpQuit ^>> edge
