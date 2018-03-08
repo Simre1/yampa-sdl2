@@ -4,42 +4,36 @@ import FRP.Yampa
 import YampaSDL2
 import Debug.Trace
 import Data.Maybe
+import Data.Foldable
 
 main :: IO ()
 main = do
-  backend <- sdlBackend defaultBackendConfiguration
+  backend <- initSDL defaultSDLConfiguration
   mainLoop backend sf
 
 sf :: SF AppInput AppOutput
 sf = proc input -> do
   anyKeyE <- anyKeyActive -< input
   point <- accumHoldBy
-    (\p int -> p + direction int)
+    (\p keys -> p + foldl (\acc key -> acc + direction key) (V2 0 0) keys)
     (V2 0 0) -< anyKeyE
   shouldQuit <- quit -< input
+  position <- animate animateV2 (V2 0 0) [(2,easeIn,V2 100 100), (2,easeOut,V2 0 0)] -< ()
+  circleColour <- animate animateColour (green `withOpacity` 1)
+    (cycle [(10,linear, orange `withOpacity` 1),(10,linear,green `withOpacity` 1)]) -< ()
+  returnA -< output
+    (render cam
+        [ rectangle position (V2 100 100) (Filled (blue `withOpacity` 1)) 2
+        , circle (V2 0 0) 150 (Filled circleColour) 1
+        , image (V2 0 0) (V2 800 600) Nothing "./test/MARBLES.BMP" 0
+        ]
+    )
+    []
+    (isEvent shouldQuit)
 
-  objAnimated <- animate animation -< ()
-  returnA -< AppOutput
-    { graphics = Graphics
-      { camera = camera
-      , objects = [background] ++ container (V2 100 100) [obj1 point, fromMaybe obj5 
-objAnimated]
-      }
-    , sound = []
-    , shouldExit = isEvent shouldQuit
-    }
-  where camera = Camera (V2 0 0) (V2 800 600)
-        shape1 colour = Triangle (V2 0 50) (V2 50 (-50)) (V2 (-50) (-50)) (Filled colour)
-        shape2 = Rectangle (V2 50 50) (Filled blue)
-        obj1 point = RS point shape2 2
-        obj2 = RS (V2 0 0) (shape1 orange) 1
-        obj3 = RS (V2 0 0) (shape1 white) 1
-        obj4 = RS (V2 0 0) (shape1 green) 1
-        obj5 = RS (V2 0 0) (shape1 yellow) 1
-        animation = newAnimation [(0.5,obj2), (0.5,obj3), (0.5,obj4), (0.5, obj5)] Endless
+  where cam = camera (V2 0 0) (V2 800 600)
         direction ScancodeRight = V2 2 0
         direction ScancodeLeft = V2 (-2) 0
         direction ScancodeDown = V2 0 (-2)
         direction ScancodeUp = V2 0 2
         direction _ = V2 0 0
-        background = RS (V2 0 0) (Image (V2 800 600) Nothing "./test/MARBLES.BMP") 0

@@ -1,4 +1,4 @@
-module YampaSDL2.Backend.Input
+module YampaSDL2.Internal.SDL.Input
   (inputAction) where
 
 import qualified SDL

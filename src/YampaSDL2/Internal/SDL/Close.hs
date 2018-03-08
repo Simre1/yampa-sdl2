@@ -1,4 +1,4 @@
-module YampaSDL2.Backend.Close
+module YampaSDL2.Internal.SDL.Close
   (closeAction) where
 
 import qualified SDL

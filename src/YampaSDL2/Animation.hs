@@ -1,45 +1,67 @@
-{-|
-Module      : Animation
-Description : Provide an easy way to do animations
--}
 {-# Language Arrows #-}
 
 module YampaSDL2.Animation
   ( -- * Animation
     animate
-  , Animation(..)
-  , AnimationType(..)
-  , newAnimation
+  -- ** Animatable Properties
+  , animateNumber
+  , animateV2
+  , animateColour
+  -- ** Animation curves
+  , linear
+  , easeIn
+  , easeOut
   ) where
 
 import FRP.Yampa
+import Linear.V2
+import Data.Maybe
+import FRP.Yampa.Event
+import Data.List
+import Data.Colour
 
-import YampaSDL2.AppOutput (RenderShape)
+type Curve = Double -> Extent
+-- | Extent is always between 0 and 1 (including 0 and 1). Starts with 0 and is at 1 at the end of the duration.
+type Extent = Double
+-- | Animation duration in seconds
+type Duration = Double
 
-data Animation = Animation
-  { frames :: [(Time, RenderShape)] -- ^ Time specifies how long the RenderShape is displayed, for example [(0.5, renderShape1), (0.5, renderShape2)]
-  , type_ :: AnimationType
-  }
+-- | Create an animation
+--
+-- Example:
+--
+-- > animate animateV2 (V2 0 0) [(2, easeOut, V2 0 100), (2, easeIn, V2 0 0)] 
+animate ::
+    (a -> a -> Extent -> a) -- ^ The property to animate
+  -> a -- ^ The starting point
+  -> [(Duration, Curve,a)] -- ^ The animations to execute one after another
+  -> SF () a
+animate _ a [] = constant a
+animate f aB ((dur,curve,aE):rest) = switch (sf aB f dur) (cont f rest)
+  where sf propertyB animateF duration = proc _ -> do
+          currentRS <- f aB aE  ^<< (boundExtent curve) ^<< (/duration) ^<< time -< ()
+          event <- after duration () -< ()
+          returnA -< (currentRS,tag event currentRS)
+        cont f rest propertyB = animate f propertyB rest
 
-newAnimation = Animation
+animateNumber :: Double -> Double -> Extent -> Double
+animateNumber beginning end e = beginning + (end - beginning) * e
 
-data AnimationType = Once | Endless | Repeat Int | Alternate | AlternateEndless
+animateV2 :: V2 Double -> V2 Double -> Extent -> V2 Double
+animateV2 beginning end e = beginning + (end - beginning)*V2 e e
 
-animate :: Animation -> SF a (Maybe RenderShape)
-animate animation
-  | (null $ frames animation) = constant Nothing
-  | otherwise = proc _ -> do
-      frameEvent <- afterEach (getFrames animation) -< ()
-      frame <- hold initialFrame -< frameEvent
-      returnA -< return frame
-        where initialFrame = let (_,frame) = head $ frames animation
-                       in frame
+animateColour :: AlphaColour Double -> AlphaColour Double -> Extent -> AlphaColour Double
+animateColour beginning end e = blend e end beginning
 
-getFrames :: Animation -> [(Time, RenderShape)]
-getFrames (Animation{frames=frames,type_=type_}) =
-  case type_ of
-    Once -> frames
-    Endless -> cycle frames
-    Repeat times -> concat $ replicate times frames
-    Alternate -> frames ++ reverse frames
-    AlternateEndless -> cycle (frames ++ reverse frames)
+linear = id
+
+easeIn x = x*x
+
+easeOut x = 1-(x-1)^2
+
+boundExtent :: Curve -> Double -> Double
+boundExtent f time
+  | f time < 0 = 0
+  | f time > 1 = 1
+  | otherwise = f time
+

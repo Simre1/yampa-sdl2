@@ -16,7 +16,7 @@ mainSF = proc i -> do
     (V2 0 0) -< anyKeyE
   shouldQuit <- quit -< i
   returnA -< AppOutput
-               { graphics = Graphics
+               { scene = Scene
                  { camera = myCamera
                  , objects = [movingRectangle point, whiteBackground] ++ createShapes 1000 ++ container (V2 0 (-50)) (createShapes 1000)
                  }
