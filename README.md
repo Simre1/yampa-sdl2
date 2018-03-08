@@ -6,7 +6,7 @@ YampaSDL2 is basically a headstart for the FRP library [Yampa](https://github.co
 
 Screenshot of some drawn shapes.
 
-**My primary Goals:**
+**Primary Goals:**
 - As little setup as possible
 - Easy to use (some feedback would be appreciated)
 
@@ -15,7 +15,7 @@ Screenshot of some drawn shapes.
 - [ ] Display Shapes
   - [x] Rectangle
   - [x] Circle
-  - [x] Triangle
+  - [ ] Triangle
   - [ ] Polygon
 - [x] Display Images
 - [x] Animations
@@ -24,26 +24,15 @@ Screenshot of some drawn shapes.
 
 **This library is still work in progress**
 
-
 ## Getting started
 
 ### Prerequisites
 
-yampa-sdl2 uses the C-libraries
-- _sdl2_
-- _sdl2-gfx_
-
-Consequently, you need to have these two libraries installed on your computer.
+To use yampa-sdl2 you need to have the C-library _sdl2_ installed on your system.
 
 ### Installation
 
-yampa-sdl2 is now on hackage! Adding yampa-sdl2 to your dependencies and executing the following should do the trick.
-
-```bash
-stack update
-stack solver --update-config
-stack build
-```
+yampa-sdl2 is on [hackage](https://hackage.haskell.org/package/yampa-sdl2)! Adding yampa-sdl2 to your dependencies like any other package should do the trick
 
 ## How to use
 
