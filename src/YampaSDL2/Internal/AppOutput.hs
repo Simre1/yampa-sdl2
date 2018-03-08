@@ -1,6 +1,6 @@
 module YampaSDL2.Internal.AppOutput
   ( RenderObject(..)
-  , modifyCenter
+  , translate
   , Scene(..)
   , AppOutput(..)
   , Camera(..)
@@ -57,8 +57,10 @@ data RenderObject = RO
   , draw :: Cache -> Center -> SDL.Renderer -> IO ()
   }
 
-modifyCenter :: (Center -> Center) -> RenderObject -> RenderObject
-modifyCenter f r = r {center = f $ center r}
+
+-- | Move a RenderObject
+translate :: (Center -> Center) -> RenderObject -> RenderObject
+translate f r = r {center = f $ center r}
 
 -- | Used to set the colour of shapes like 'rectangle' or 'circle' and whether they are filled or not. This library uses "Data.Colour" to create colours.
 data ShapeColour

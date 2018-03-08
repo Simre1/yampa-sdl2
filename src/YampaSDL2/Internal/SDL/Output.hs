@@ -81,4 +81,4 @@ adjustToCamera' c rs =
   let (V2 cx cy) = cPos c
       (V2 w h) = cSize c
       adjustPoint (V2 x y) = V2 (x + w / 2 - cx) (h / 2 - (y + cy))
-  in modifyCenter adjustPoint rs
+  in translate adjustPoint rs

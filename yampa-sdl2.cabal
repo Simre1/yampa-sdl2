@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: e826b144e75a4b99dcc27a9c77dcb6abac127a73e1b91e51e517d7a8173b02df
+-- hash: 66458a0f51aeaa5ab3e3b160e0f59b4753353f4477586442aacdeaf91e06ae84
 
 name:           yampa-sdl2
 version:        0.1.0.0
@@ -24,13 +24,13 @@ extra-source-files:
 library
   exposed-modules:
       YampaSDL2
+      YampaSDL2.Animation
       YampaSDL2.Draw
       YampaSDL2.Drawable.Circle
       YampaSDL2.Drawable.Image
       YampaSDL2.Drawable.Rectangle
       YampaSDL2.Init
       YampaSDL2.InputOutput
-      YampaSDL2.Internal.Animation
       YampaSDL2.Internal.AppInput
       YampaSDL2.Internal.AppOutput
       YampaSDL2.Internal.MainLoop

@@ -23,6 +23,7 @@ module YampaSDL2.InputOutput
   , Bounds
   , Cache
   , RenderObject (..)
+  , translate
   , ShapeColour (..)
   -- ** Sound
   , Sound (..)
