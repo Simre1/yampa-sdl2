@@ -1,5 +1,5 @@
 name:                yampa-sdl2
-version:             0.1.0.1 
+version:             0.1.0.2 
 synopsis:            Yampa and SDL2 made easy
 description:         yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
 homepage:            https://github.com/Simre1/YampaSDL2#readme

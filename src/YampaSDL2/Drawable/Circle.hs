@@ -53,7 +53,7 @@ fullPoints = (memoize3 f)
   where
     f x y r =
       Vector.fromList $
-      SDL.P . fmap (toEnum) <$> (+ (V2 x y)) <$> rasterCircleFull e
+      SDL.P . fmap (toEnum) <$> (+ (V2 x y)) <$> rasterCircleFull r
 
 linePoints = memoize3 f
   where

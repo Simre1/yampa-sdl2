@@ -2,10 +2,10 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: b241737fda166129b277cf7c392a1fe260e8b8090285f006d916c8bb9a10915a
+-- hash: c6c36163a7a0893f131b1e4307ea568c569517bf51bf200924e0753b7ea0e2f2
 
 name:           yampa-sdl2
-version:        0.1.0.0
+version:        0.1.0.2
 synopsis:       Yampa and SDL2 made easy
 description:    yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
 category:       Scene
