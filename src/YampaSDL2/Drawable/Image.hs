@@ -6,7 +6,6 @@ import Control.Concurrent.MVar
 import Control.Exception
 import Control.Monad
 import Data.Dynamic
-import Data.Function.Memoize
 import Data.List
 import Data.Maybe
 import Data.StateVar (($=))
@@ -94,24 +93,3 @@ loadImage p renderer = do
 
 handleError :: SomeException -> IO ()
 handleError e = print e
---Image {shapeCentre=centre', size=size', sourceRect=maybeRect, imgPath=path} -> do
---         textures <- readMVar mvarTextures
---         case lookup path textures of
---           (Just (t,size)) ->
---             let newSize = fromMaybe ((fromIntegral<$>size)/2, fromIntegral <$> size) maybeRect
---             in drawImage renderer t (return newSize) centre' size'
---           Nothing -> do
---             eitherSurface <- try $ SDL.loadBMP path :: IO (Either SomeException SDL.Surface)
---             case eitherSurface of
---               Left ex -> putStrLn $ "IMG Loading failed: " ++ show ex
---               Right val -> do
---                 newTexture <- SDL.createTextureFromSurface renderer val
---                 attrs <- SDL.queryTexture newTexture
---                 let w = SDL.textureWidth attrs
---                     h = SDL.textureHeight attrs
---                 modifyMVar_ mvarTextures $ return . ((path,(newTexture, fromEnum <$> V2 w h)):)
---                 drawImage renderer newTexture maybeRect centre' size'
---   where drawImage renderer texture source position size = do
---           let toSDLRect (V2 x y, V2 w h) =
---                 SDL.Rectangle (round <$> SDL.P (V2 (x-w/2) (y-h/2))) (round <$> V2 w h)
---           SDL.copy renderer texture (toSDLRect <$> source) (return $ toSDLRect (position,size))

@@ -1,13 +1,15 @@
+{-# LANGUAGE BangPatterns #-}
 module YampaSDL2.Drawable.Circle
   ( circle
   ) where
 
-import Data.Function.Memoize
 import Data.StateVar (($=))
 import qualified Data.Vector.Storable as Vector
 import Linear.V2
 import Linear.V4
 import qualified SDL
+import Debug.Trace
+import qualified Data.MemoCombinators as Memo
 
 import YampaSDL2.Internal.AppOutput
 
@@ -39,7 +41,7 @@ circle center r colour zIndex =
   in RO center bounds zIndex draw
 
 calculateRectangle :: Int -> Int -> Int -> SDL.Rectangle Int
-calculateRectangle = memoize3 f
+calculateRectangle = (Memo.integral . Memo.integral . Memo.integral) f
   where
     f x y r =
       let a = 0.7071067811865476 * (fromIntegral r)
@@ -47,11 +49,11 @@ calculateRectangle = memoize3 f
            (SDL.P $ V2 x y - (truncate <$> V2 a a))
            (ceiling <$> V2 (2 * a) (2 * a))
 
-fullPoints = memoize3 f
+fullPoints = (memoize3 f)
   where
     f x y r =
       Vector.fromList $
-      SDL.P . fmap (toEnum) <$> (+ (V2 x y)) <$> rasterCircleFull r
+      SDL.P . fmap (toEnum) <$> (+ (V2 x y)) <$> rasterCircleFull e
 
 linePoints = memoize3 f
   where
@@ -95,7 +97,7 @@ fcircle quadrantPoints = quadrantPoints >>= mirror
     mirror (V2 x y) = [(V2 u v) | u <- [x, -x], v <- [y, -y]]
 
 rasterCircleLine :: Int -> [V2 Int]
-rasterCircleLine = memoize (fcircle . quadrant . octantLine)
+rasterCircleLine =  memoize (fcircle . quadrant . octantLine)
 
 rasterCircleFull :: Int -> [V2 Int]
 rasterCircleFull = memoize (fcircle . quadrant . octantFull)
@@ -106,3 +108,7 @@ toV2 (a, b) = V2 a b
 
 fromV2 :: V2 a -> (a, a)
 fromV2 (V2 a b) = (a, b)
+
+memoize = Memo.integral
+
+memoize3 = Memo.memo3 memoize memoize memoize

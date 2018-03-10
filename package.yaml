@@ -1,5 +1,5 @@
 name:                yampa-sdl2
-version:             0.1.0.0 
+version:             0.1.0.1 
 synopsis:            Yampa and SDL2 made easy
 description:         yampa-sdl2 lets you start coding your app right away instead of dealing with SDL2 first.
 homepage:            https://github.com/Simre1/YampaSDL2#readme
@@ -15,15 +15,14 @@ dependencies:
   - base >= 4.7 && < 5
   - Yampa
   - sdl2
-  - colour
   - StateVar
   - text
   - linear
   - vector
-  - memoize
+  - data-memocombinators
 
 library:
-  source-dirs:      src
+  source-dirs: src
   ghc-options: [-O2]
 tests:
   YampaSDL2-test:

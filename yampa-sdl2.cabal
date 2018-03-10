@@ -2,7 +2,7 @@
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 66458a0f51aeaa5ab3e3b160e0f59b4753353f4477586442aacdeaf91e06ae84
+-- hash: b241737fda166129b277cf7c392a1fe260e8b8090285f006d916c8bb9a10915a
 
 name:           yampa-sdl2
 version:        0.1.0.0
@@ -23,6 +23,20 @@ extra-source-files:
 
 library
   exposed-modules:
+      Data.Colour
+      Data.Colour.Chan
+      Data.Colour.CIE
+      Data.Colour.CIE.Chromaticity
+      Data.Colour.CIE.Illuminant
+      Data.Colour.Internal
+      Data.Colour.Matrix
+      Data.Colour.Names
+      Data.Colour.RGB
+      Data.Colour.RGBSpace
+      Data.Colour.RGBSpace.HSL
+      Data.Colour.RGBSpace.HSV
+      Data.Colour.SRGB
+      Data.Colour.SRGB.Linear
       YampaSDL2
       YampaSDL2.Animation
       YampaSDL2.Draw
@@ -51,9 +65,8 @@ library
       StateVar
     , Yampa
     , base >=4.7 && <5
-    , colour
+    , data-memocombinators
     , linear
-    , memoize
     , sdl2
     , text
     , vector
@@ -70,9 +83,8 @@ test-suite YampaSDL2-test
       StateVar
     , Yampa
     , base
-    , colour
+    , data-memocombinators
     , linear
-    , memoize
     , sdl2
     , text
     , vector
