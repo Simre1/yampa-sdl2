@@ -30,5 +30,5 @@ rectangle center dimensions colour zIndex =
                 then SDL.fillRect
                 else SDL.drawRect
             newCenter = SDL.P $ (c - dimensions / 2)
-        draw' renderer (return $ round <$> SDL.Rectangle newCenter dimensions)
+        draw' renderer (return $ ceiling <$> SDL.Rectangle newCenter dimensions)
   in RO center (V4 t r b l) zIndex draw
