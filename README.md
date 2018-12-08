@@ -1,5 +1,7 @@
 # YampaSDL2
 
+**Discontinued** because the performance is really not great.
+
 YampaSDL2 is basically a headstart for the FRP library [Yampa](https://github.com/ivanperez-keera/Yampa) and SDL2. All the boilerplate which is normally necessary for these two libraries to work together is already taken care of. In the end, all that remains is a high-level interface specifically tailored to Yampa which should get you going in no time.
 
 ![Screenshot](./screenshot.png)
