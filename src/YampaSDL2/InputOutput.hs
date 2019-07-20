@@ -6,6 +6,7 @@ module YampaSDL2.InputOutput
   , mouseLeftPress
   , mouseRightActive
   , mouseRightPress
+  , mousePosition
   , anyKeyActive
   , anyKeyPress
   , quit
