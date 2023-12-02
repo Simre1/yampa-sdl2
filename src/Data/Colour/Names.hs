@@ -185,7 +185,7 @@ import Prelude hiding (tan)
 import Data.Colour.SRGB
 import Data.Colour (black)
 
-readColourName :: (Monad m, Ord a, Floating a) => String -> m (Colour a)
+readColourName :: (Monad m, Ord a, Floating a, MonadFail m) => String -> m (Colour a)
 readColourName "aliceblue" = return aliceblue
 readColourName "antiquewhite" = return antiquewhite
 readColourName "aqua" = return aqua
